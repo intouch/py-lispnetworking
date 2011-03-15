@@ -6,6 +6,47 @@ from scapy.ansmachine import *
 from scapy.layers.inet import UDP
 import socket,struct
 
+""" Will parse an IPField or an IP6Field depending on the value of the AFI field. """
+class LISPAddressField(Field):
+    _ip_field=IPField("source_eid_address", "192.168.1.1")
+    _ip6_field=IP6Field("source_eid_address", "2001:db8::1")
+    
+    def __init__(self):
+        Field.__init__(self, "LISP Address Field", None)
+    
+    def getfield(self, pkt, s):
+        if pkt.source_eid_afi == socket.AF_INET:
+            return _ip_field.getfield(pkt,s)
+        elif pkt.source_eid_afi == socket.AF_INET6:
+            return _ip6_field("source_eid_address", "2001:db8::1").getfield(pkt,s)
+    
+    def addfield(self, pkt, s, val):
+        if pkt.source_eid_afi == socket.AF_INET:
+            return self._ip_field.addfield(pkt, s, val)
+        elif pkt.source_eid_afi == socket.AF_INET6:
+            return self._ip6_field.addfield(pkt, s, val)
+                
+#class ConditionalField:
+#    fld = None
+#    def __init__(self, fld, cond):
+#        self.fld = fld
+#        self.cond = cond
+#    def _evalcond(self,pkt):
+#        return self.cond(pkt)
+
+#    def getfield(self, pkt, s):
+#        if self._evalcond(pkt):
+#            return self.fld.getfield(pkt,s)
+#        else:
+#            return s,None
+#
+#    def addfield(self, pkt, s, val):
+#        if self._evalcond(pkt):
+#            return self.fld.addfield(pkt,s,val)
+#        else:
+#            return s
+
+
 """
 A packet contains a standard outer IP header
 
@@ -164,10 +205,11 @@ class LISPRequest(Packet):
         StrFixedLenField("nonce", int(random.randint(0,100000000)), 8),
     # TODO: we need to fix socket.AF_INET6 here because in python/socket module IP6 is 30 but on the wire it will be 2
         ShortField("source_eid_afi", socket.AF_INET6),
-        ConditionalField(IPField("source_eid_address", "192.168.1.1"),
-            lambda pkt:pkt.source_eid_afi == socket.AF_INET),
-        ConditionalField(IP6Field("source_eid_address", "2001:db8::1"),
-            lambda pkt:pkt.source_eid_afi == socket.AF_INET6),
+#        ConditionalField(IPField("source_eid_address", "192.168.1.1"),
+#            lambda pkt:pkt.source_eid_afi == socket.AF_INET),
+#        ConditionalField(IP6Field("source_eid_address", "2001:db8::1"),
+#            lambda pkt:pkt.source_eid_afi == socket.AF_INET6),
+        LISPAddressField()
 	]
 
 #class LISPRequestEIDRecord(Packet):
