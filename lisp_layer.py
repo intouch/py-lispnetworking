@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.6
 from scapy.all import *
 from scapy.packet import *
 from scapy.fields import *
@@ -195,7 +195,7 @@ Packet format:
 
 """
 
-class LISPRequest(Packet):
+class LISPMapRequest(Packet):
     name = "Map Request"
     fields_desc = [
         FlagsField("flags", None, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
@@ -296,9 +296,6 @@ class LISPReplyRLOC(Packet):
 #assemble lisp packet
 def createLispMessage():
 	return IP()/UDP(sport=4342,dport=4342)/LISPHeader()
-#debug mode
-if __name__ == "__main__":
-	interact(mydict=globals(), mybanner="lisp debug")
 
 """
 Bind LISP into scapy stack
@@ -316,8 +313,16 @@ We only implemented the LISP control plane
 bind_layers( UDP, LISPHeader, dport=4342)
 bind_layers( UDP, LISPHeader, sport=4342)
 # when we are further we can let scapy decide the packetformat
-bind_layers( LISPHeader, LISPMapRequest, type=1)
-bind_layers( LISPHeader, LISPMapReply, type=2)
-bind_layers( LISPHeader, LISPMapRegister, type=3)
-bind_layers( LISPHeader, LISPMapNotify, type=4)
+#bind_layers( LISPHeader, LISPMapRequest, type=1)
+#bind_layers( LISPHeader, LISPMapReply, type=2)
+# bind_layers( LISPHeader, LISPMapRegister, type=3)
+# bind_layers( LISPHeader, LISPMapNotify, type=4)
 # bind_layers( LISPHeader, LISPEncapsulatedControlMessage, type=8)
+
+""" start scapy shell """
+
+#debug mode
+if __name__ == "__main__":
+	interact(mydict=globals(), mybanner="lisp debug")
+
+
