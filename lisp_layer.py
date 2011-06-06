@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env phyton2.6
 from scapy.all import *
 from scapy.packet import *
 from scapy.fields import *
@@ -163,6 +163,7 @@ class LISPMapRequest(Packet):
         BitField("itr_rloc_count", 0, 5),
         ByteField("record_count", 0),
         StrFixedLenField("nonce", 0, 8),
+    # TODO: we need to fix socket.AF_INET6 here because in python/socket module IP6 is 30 but on the wire it will be 2
         ShortField("source_eid_afi", socket.AF_INET6),
         ConditionalField(IPField("source_eid_address", "192.168.1.1"),
             lambda pkt:pkt.source_eid_afi == socket.AF_INET),
