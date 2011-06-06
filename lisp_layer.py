@@ -1,4 +1,4 @@
-#!/usr/bin/env phyton2.6
+#!/usr/bin/env python
 from scapy.all import *
 from scapy.packet import *
 from scapy.fields import *
@@ -171,6 +171,56 @@ class LISPMapRequest(Packet):
             lambda pkt:pkt.source_eid_afi == socket.AF_INET6),
     ]
 
+"""
+        
+LISP PACKET TYPE 2: Map-Reply
+
+	0                   1                   2                   3
+        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       |Type=2 |P|E|S|          Reserved               | Record Count  |
+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       |                         Nonce . . .                           |
+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       |                         . . . Nonce                           |
+   +-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |   |                          Record  TTL                          |
+   |   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   R   | Locator Count | EID mask-len  | ACT |A|      Reserved         |
+   e   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   c   | Rsvd  |  Map-Version Number   |       EID-prefix-AFI          |
+   o   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   r   |                          EID-prefix                           |
+   d   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |  /|    Priority   |    Weight     |  M Priority   |   M Weight    |
+   | L +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   | o |        Unused Flags     |L|p|R|           Loc-AFI             |
+   | c +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |  \|                             Locator                           |
+   +-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       |                     Mapping Protocol Data                     |
+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+"""
+
+
+class LISPMapReply(Packet):
+    name = "Map Request Header"
+    fields_desc = [
+        FlagsField("flags", 0, 3, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
+        BitField("padding", 0, 17),
+        ByteField("record_count", 0),
+        StrFixedLenField("nonce", 0, 8)]
+    # TODO: we need to fix socket.AF_INET6 here because in python/socket module IP6 is 30 but on the wire it will be 2
+
+
+class LISPMapReplyRecord(Packet):
+    name = "Map Request Records, determined by the 'record_count' from the header" 
+    fields_desc = [
+	ByteField("record_ttl", 4),
+	ByteField("locator_count", 1),    
+	ByteField("eid_mask_length", 1)]
+
+
 class LispSMR(Packet):
 	name = "smr bit that distinguishes new from old requests"
 	fields_desc = [ ShortField("smr", 1) ]
@@ -190,19 +240,6 @@ class LispType(Packet):
         name = "lisptype"
         #fields_desc = [ BitEnumField("t", 0, 1, {0:"res",1:"req",2:"rep",3:"req",8:"open", 9:"pushadd",10:"pushdelete",11:"unreach"}) ]
 	fields_desc = [XShortField("type", 1)]
-
-#type specification
-def LispMapRequest():
-	name = "send a lisp query"
-	type = 0001
-
-def LispMapReply(message_type):
-	name = "send a lisp reply"
-	self.type = type 
-
-
-#def line(self, pkt, s, val):
-#	        return s+struct.pack("%is"%self.length,self.i2m(pkt, val))
 
 
 #assemble lisp packet
