@@ -158,8 +158,16 @@ class LISPMapRequest(Packet):
     """ LISP Map Requests """
     name = "Map Request"
     fields_desc = [
-    FlagsField("Flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
-    BitFieldLenField("Padding", 0, 9),
+    FlagsField("flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
+    # actually the padding should be 9 bits, but we need 3 bits in the itr_rloc_count field so we don't 
+    # have to write a new field definition. The itr_rloc_count field is 5 bits and contains an integer where
+    # counting is done from 0. 
+    BitFieldLenField("padding", 0, 6),
+    # some kind of check must be build in that if the value of itr_rloc_count is larger then 32 the first 3 bits
+    # must be pushed off the stack
+    ByteField("itr_rloc_count", 0),
+    ByteField("record_count", 0),
+    StrFixedLenField("nonce", 0, 8),
     ]
 
 class LispSMR(Packet):
