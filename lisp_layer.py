@@ -90,6 +90,20 @@ strategy must be chosen.
 
 """
 
+_LISP_TYPES = { 0 : "reserved",
+                1 : "maprequest",
+                2 : "mapreply",
+                3 : "mapregister",
+                4 : "mapnotify",
+                8 : "encapsulated_control_message" }
+
+class LISPHeader(Packet)
+    """ first part of any lisp packet """
+    name = "LISP header"
+    fields_desc = [
+    ByteEnumField("type", 4, _LISP_TYPES)
+    ]
+
 """
 LISP PACKET TYPE 1: Map-Request
 
@@ -140,6 +154,12 @@ Packet format:
 
 """
 
+class LISPMapRequest(Packet):
+    """ LISP Map Requests """
+    name = "Map Request"
+    fields_desc = [
+    ]
+
 class LispSMR(Packet):
 	name = "smr bit that distinguishes new from old requests"
 	fields_desc = [ ShortField("smr", 1) ]
@@ -183,4 +203,28 @@ def test():
 #debug mode
 if __name__ == "__main__":
 	interact(mydict=globals(), mybanner="lisp debug")
+
+"""
+Bind LISP into scapy stack
+
+According to http://www.iana.org/assignments/port-numbers :
+
+lisp-data   4341/tcp   LISP Data Packets
+lisp-data   4341/udp   LISP Data Packets
+lisp-cons   4342/tcp   LISP-CONS Control
+lisp-control    4342/udp   LISP Data-Triggered Control
+
+We only implemented the LISP control plane
+
+"""
+
+bind_layers( UDP, LISPHeader, dport=4342)
+bind_layers( UDP, LISPHeader, sport=4342)a
+# when we are further we can let scapy decide the packetformat
+# bind_layers( LISPHeader, LISPMapRequest, type=1)
+# bind_layers( LISPHeader, LISPMapReply, type=2)
+# bind_layers( LISPHeader, LISPMapRegister, type=3)
+# bind_layers( LISPHeader, LISPMapNotify, type=4)
+# bind_layers( LISPHeader, LISPEncapsulatedControlMessage, type=8)
+
 
