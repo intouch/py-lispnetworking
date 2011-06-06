@@ -197,7 +197,7 @@ def LispMapReply(message_type):
 
 #assemble lisp packet
 def createLispMessage(type):
-	return IP()/UDP(sport=4342,dport=4342)/LispType(type=type)
+	return IP()/UDP(sport=4342,dport=4342)/LispType(type=1)
 #debug mode
 if __name__ == "__main__":
 	interact(mydict=globals(), mybanner="lisp debug")
