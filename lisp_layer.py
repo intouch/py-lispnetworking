@@ -97,7 +97,7 @@ _LISP_TYPES = { 0 : "reserved",
                 4 : "mapnotify",
                 8 : "encapsulated_control_message" }
 
-class LISPHeader(Packet)
+class LISPHeader(Packet):
     """ first part of any lisp packet """
     name = "LISP header"
     fields_desc = [
@@ -178,16 +178,16 @@ class LispNonce(Packet):
 class LispType(Packet):
         name = "lisptype"
         #fields_desc = [ BitEnumField("t", 0, 1, {0:"res",1:"req",2:"rep",3:"req",8:"open", 9:"pushadd",10:"pushdelete",11:"unreach"}) ]
-	fields_desc = [XShortField("message_type", 1)]
+	fields_desc = [XShortField("type", 1)]
 
 #type specification
 def LispMapRequest():
 	name = "send a lisp query"
-	message_type = 0001
+	type = 0001
 
 def LispMapReply(message_type):
 	name = "send a lisp reply"
-	self.messagetype = message_type 
+	self.type = type 
 
 
 #def line(self, pkt, s, val):
@@ -195,11 +195,8 @@ def LispMapReply(message_type):
 
 
 #assemble lisp packet
-def createLispMessage(smr, t):
-	return IP()/UDP(sport=4342,dport=4342)/LispType(messagetype=1)
-
-def test():
-	return 1
+def createLispMessage(type):
+	return IP()/UDP(sport=4342,dport=4342)/LispType(type=type)
 #debug mode
 if __name__ == "__main__":
 	interact(mydict=globals(), mybanner="lisp debug")
@@ -219,9 +216,9 @@ We only implemented the LISP control plane
 """
 
 bind_layers( UDP, LISPHeader, dport=4342)
-bind_layers( UDP, LISPHeader, sport=4342)a
+bind_layers( UDP, LISPHeader, sport=4342)
 # when we are further we can let scapy decide the packetformat
-# bind_layers( LISPHeader, LISPMapRequest, type=1)
+bind_layers( LISPHeader, LISPMapRequest, type=1)
 # bind_layers( LISPHeader, LISPMapReply, type=2)
 # bind_layers( LISPHeader, LISPMapRegister, type=3)
 # bind_layers( LISPHeader, LISPMapNotify, type=4)
