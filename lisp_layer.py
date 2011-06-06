@@ -158,6 +158,7 @@ class LISPMapRequest(Packet):
     """ LISP Map Requests """
     name = "Map Request"
     fields_desc = [
+    FlagsField("Flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
     ]
 
 class LispSMR(Packet):
