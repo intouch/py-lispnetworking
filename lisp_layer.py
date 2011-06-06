@@ -155,14 +155,13 @@ Packet format:
 """
 
 class LISPMapRequest(Packet):
-    """ LISP Map Requests """
     name = "Map Request"
     fields_desc = [
-        FlagsField("flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
-        BitField("padding", 0, 9),
-        BitField("itr_rloc_count", 0, 5),
+        FlagsField("flags", None, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
+        BitField("padding", "0"*9, 9),
+        BitField("itr_rloc_count", "0"*5, 5),
         ByteField("record_count", 0),
-        StrFixedLenField("nonce", 0, 8),
+        StrFixedLenField("nonce", int(random.randint(0,100000000)), 8),
     # TODO: we need to fix socket.AF_INET6 here because in python/socket module IP6 is 30 but on the wire it will be 2
         ShortField("source_eid_afi", socket.AF_INET6),
         ConditionalField(IPField("source_eid_address", "192.168.1.1"),
@@ -206,10 +205,10 @@ LISP PACKET TYPE 2: Map-Reply
 class LISPMapReply(Packet):
     name = "Map Request Header"
     fields_desc = [
-        FlagsField("flags", 0, 3, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
-        BitField("padding", 0, 17),
-        ByteField("record_count", 0),
-        StrFixedLenField("nonce", 0, 8)]
+        FlagsField("flags", None, 3, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
+        BitField("padding", "0"*17, 17),
+        ByteField("record_count", "0"*8),
+        StrFixedLenField("nonce", int(random.randint(0,100000000)), 8)]
     # TODO: we need to fix socket.AF_INET6 here because in python/socket module IP6 is 30 but on the wire it will be 2
 
 
@@ -220,7 +219,7 @@ class LISPMapReplyRecord(Packet):
 	ByteField("locator_count", 1),    
 	ByteField("eid_mask_length", 1)]
 
-
+"""
 class LispSMR(Packet):
 	name = "smr bit that distinguishes new from old requests"
 	fields_desc = [ ShortField("smr", 1) ]
@@ -240,7 +239,7 @@ class LispType(Packet):
         name = "lisptype"
         #fields_desc = [ BitEnumField("t", 0, 1, {0:"res",1:"req",2:"rep",3:"req",8:"open", 9:"pushadd",10:"pushdelete",11:"unreach"}) ]
 	fields_desc = [XShortField("type", 1)]
-
+"""
 
 #assemble lisp packet
 def createLispMessage(type):
