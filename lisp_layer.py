@@ -172,7 +172,7 @@ class LISPMapRequest(Packet):
         ConditionalField(IPField("source_eid_address", "192.168.1.1"),
             lambda pkt:pkt.source_eid_afi == socket.AF_INET),
         ConditionalField(IP6Field("source_eid_address", "2001:db8::1"),
-            lambda pkt:pkt.source_eid_afi == socket.AF_INET6)
+            lambda pkt:pkt.source_eid_afi == socket.AF_INET6),
     ]
 
 class LispSMR(Packet):
