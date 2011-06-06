@@ -97,7 +97,7 @@ _LISP_TYPES = { 0 : "reserved",
                 4 : "mapnotify",
                 8 : "encapsulated_control_message" }
 
-class LISPHeader(Packet)
+class LISPHeader(Packet):
     """ first part of any lisp packet """
     name = "LISP header"
     fields_desc = [
