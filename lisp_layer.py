@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env phyton2.6
 from scapy.all import *
 from scapy.packet import *
 from scapy.fields import *
@@ -101,7 +101,7 @@ class LISPHeader(Packet):
     """ first part of any lisp packet """
     name = "LISP header"
     fields_desc = [
-    ByteEnumField("type", 0, _LISP_TYPES)
+    BitEnumField("type", 0, 4, _LISP_TYPES)
     ]
 
 """
@@ -158,7 +158,17 @@ class LISPMapRequest(Packet):
     """ LISP Map Requests """
     name = "Map Request"
     fields_desc = [
-    FlagsField("Flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
+        FlagsField("flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
+        BitField("padding", 0, 9),
+        BitField("itr_rloc_count", 0, 5),
+        ByteField("record_count", 0),
+        StrFixedLenField("nonce", 0, 8),
+    # TODO: we need to fix socket.AF_INET6 here because in python/socket module IP6 is 30 but on the wire it will be 2
+        ShortField("source_eid_afi", socket.AF_INET6),
+        ConditionalField(IPField("source_eid_address", "192.168.1.1"),
+            lambda pkt:pkt.source_eid_afi == socket.AF_INET),
+        ConditionalField(IP6Field("source_eid_address", "2001:db8::1"),
+            lambda pkt:pkt.source_eid_afi == socket.AF_INET6),
     ]
 
 class LispSMR(Packet):
