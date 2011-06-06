@@ -179,16 +179,16 @@ class LispNonce(Packet):
 class LispType(Packet):
         name = "lisptype"
         #fields_desc = [ BitEnumField("t", 0, 1, {0:"res",1:"req",2:"rep",3:"req",8:"open", 9:"pushadd",10:"pushdelete",11:"unreach"}) ]
-	fields_desc = [ShortField("message_type", 1)]
+	fields_desc = [XShortField("message_type", 1)]
 
 #type specification
 def LispMapRequest():
 	name = "send a lisp query"
-	message_type = 1
+	message_type = 0001
 
-def LispMapReply():
+def LispMapReply(message_type):
 	name = "send a lisp reply"
-	message_type = 2
+	self.messagetype = message_type 
 
 
 #def line(self, pkt, s, val):
@@ -197,7 +197,7 @@ def LispMapReply():
 
 #assemble lisp packet
 def createLispMessage(smr, t):
-	return IP()/UDP(sport=4342,dport=4342)/LispSMR(1)/LispLocatorBits()/LispNonce()/LispType()
+	return IP()/UDP(sport=4342,dport=4342)/LispType(messagetype=1)
 
 def test():
 	return 1
