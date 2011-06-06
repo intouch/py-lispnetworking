@@ -158,7 +158,7 @@ class LispNonce(Packet):
 class LispType(Packet):
         name = "lisptype"
         #fields_desc = [ BitEnumField("t", 0, 1, {0:"res",1:"req",2:"rep",3:"req",8:"open", 9:"pushadd",10:"pushdelete",11:"unreach"}) ]
-	fields_desc = [XShortField("message_type", 4)]
+	fields_desc = [XShortField("message_type", 1)]
 
 #type specification
 def LispMapRequest():
