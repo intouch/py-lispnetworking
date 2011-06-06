@@ -30,11 +30,11 @@ class LispType(Packet):
 #type specification
 def LispMapRequest():
 	name = "send a lisp query"
-	t = 1
+	message_type = 1
 
 def LispMapReply():
 	name = "send a lisp reply"
-	t = 2
+	message_type = 2
 
 
 #def line(self, pkt, s, val):
