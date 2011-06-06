@@ -111,25 +111,25 @@ Packet format:
 
         0                   1                   2                   3
         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
        |Type=1 |A|M|P|S|p|s|    Reserved     |   IRC   | Record Count  |
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       |                         Nonce . . .                           |
+       |                         Nonce . . .                           |      class LISPRequest
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
        |                         . . . Nonce                           |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
        |         Source-EID-AFI        |   Source EID Address  ...     |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       |         ITR-RLOC-AFI 1        |    ITR-RLOC Address 1  ...    |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      class LISPRequestRLOCRecord
+       |         ITR-RLOC-AFI 1        |    ITR-RLOC Address 1  ...    |      (horrible name, i know -marek)
+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
        |                              ...                              |
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
        |         ITR-RLOC-AFI n        |    ITR-RLOC Address n  ...    |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
      / |   Reserved    | EID mask-len  |        EID-prefix-AFI         |
-   Rec +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-     \ |                       EID-prefix  ...                         |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   Rec +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      class LISPRequestEIDRecord
+     \ |                       EID-prefix  ...                         |      (horrible name, i know -marek)
+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
        |                   Map-Reply Record  ...                       |
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
        |                     Mapping Protocol Data                     |
@@ -154,7 +154,7 @@ Packet format:
 
 """
 
-class LISPMapRequest(Packet):
+class LISPRequest(Packet):
     name = "Map Request"
     fields_desc = [
         FlagsField("flags", None, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
@@ -168,8 +168,30 @@ class LISPMapRequest(Packet):
             lambda pkt:pkt.source_eid_afi == socket.AF_INET),
         ConditionalField(IP6Field("source_eid_address", "2001:db8::1"),
             lambda pkt:pkt.source_eid_afi == socket.AF_INET6),
-    ]
+	]
 
+#class LISPRequestEIDRecord(Packet):
+	#source eid afi
+	#source eid
+	#itr-rloc-afi
+	#itr-rloc-add
+
+    
+
+class LISPRequestRLOCRecord(Packet):
+    name = "Map Request Record"
+    fields_desc = [
+	ByteField("reserved", 1),
+	ByteField("eid_mask_length", 1),
+    # TODO: we need to fix socket.AF_INET6 here because in python/socket module IP6 is 30 but on the wire it will be 2
+        ShortField("source_eid_afi", socket.AF_INET6),
+        ConditionalField(IPField("source_eid_address", "192.168.1.1"),
+            lambda pkt:pkt.source_eid_afi == socket.AF_INET),
+        ConditionalField(IP6Field("source_eid_address", "2001:db8::1"),
+            lambda pkt:pkt.source_eid_afi == socket.AF_INET6),
+	ByteField("eid_prefix", 4)
+    ]
+		
 """
         
 LISP PACKET TYPE 2: Map-Reply
