@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/python
 from scapy.all import *
 from scapy.packet import *
 from scapy.fields import *
@@ -122,7 +122,7 @@ class LISPHeader(Packet):
     """ first part of any lisp packet """
     name = "LISP header"
     fields_desc = [
-    BitEnumField("type", 0*4, 4, _LISP_TYPES),
+    BitEnumField("packettype", 0*4, 4, _LISP_TYPES),
 	]
 
 """
@@ -178,7 +178,7 @@ Packet format:
 class LISPMapRequest(Packet):
     name = "Map Request"
     fields_desc = [
-        FlagsField("flags", None, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
+        FlagsField("flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
         BitField("padding", "0"*9, 9),
         BitField("itr_rloc_count", "0"*5, 5),
         ByteField("record_count", 0),
@@ -293,11 +293,11 @@ We only implemented the LISP control plane
 bind_layers( UDP, LISPHeader, dport=4342)
 bind_layers( UDP, LISPHeader, sport=4342)
 # when we are further we can let scapy decide the packetformat
-#bind_layers( LISPHeader, LISPMapRequest, type=1)
-#bind_layers( LISPHeader, LISPMapReply, type=2)
-# bind_layers( LISPHeader, LISPMapRegister, type=3)
-# bind_layers( LISPHeader, LISPMapNotify, type=4)
-# bind_layers( LISPHeader, LISPEncapsulatedControlMessage, type=8)
+bind_layers( LISPHeader, LISPMapRequest, packettype=1)
+bind_layers( LISPHeader, LISPMapReply, packettype=2)
+#bind_layers( LISPHeader, LISPMapRegister, type=3)	#TODO
+#bind_layers( LISPHeader, LISPMapNotify, type=4)	#TODO
+#bind_layers( LISPHeader, LISPEncapsulatedControlMessage, type=8) #TODO
 
 """ start scapy shell """
 
