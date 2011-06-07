@@ -214,7 +214,7 @@ LISP PACKET TYPE 2: Map-Reply
    r   |                          EID-prefix                           |
    d   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
    |  /|    Priority   |    Weight     |  M Priority   |   M Weight    |
-   | L +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      N x class LISPReplyLocatorRec
+   | L +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      N x class LISPReplyRLOC
    | o |        Unused Flags     |L|p|R|           Loc-AFI             |
    | c +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      N = Locator Count field
    |  \|                             Locator                           |
@@ -225,21 +225,30 @@ LISP PACKET TYPE 2: Map-Reply
 
 
 class LISPMapReply(Packet):
-    name = "Map Request Header"
+    name = "Map Reply Header"
     fields_desc = [
         FlagsField("flags", None, 3, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
-        BitField("padding", "0"*17, 17),
-        ByteField("record_count", "0"*8),
-        StrFixedLenField("nonce", int(random.randint(0,100000000)), 8)]
-    # TODO: we need to fix socket.AF_INET6 here because in python/socket module IP6 is 30 but on the wire it will be 2
-
+        BitField("padding", "0"*17, 17),     # reserved bytes, filled with 0's
+        ByteField("record_count", "0"*8),    # amount of records in a map reply
+        StrFixedLenField("nonce", int(random.randint(0,100000000)), 8)]            # nonce containing random integer
 
 class LISPMapReplyRecord(Packet):
-    name = "Map Request Records, determined by the 'record_count' from the header" 
+    name = "Map Reply Records, n times determined by the 'record_count' from the header" 
     fields_desc = [
-	ByteField("record_ttl", 4),
-	ByteField("locator_count", 1),    
-	ByteField("eid_mask_length", 1)]
+	ByteField("record_ttl", 4),	    # ttl
+	ByteField("locator_count", 1),      # amount of locator records in the packet, see LISPReplyRLOC    
+	ByteField("eid_mask_length", 1)]    # mask length of the EID-space
+
+class LISPReplyRLOC(Packet):
+    name = "Map Reply RLOC record, n times determined by the record count field"
+    fields_desc = [
+	ByteField("priority", 1),           # unicast traffic priority
+	ByteField("weight", 1),             # unicast traffic weight
+	ByteField("m_priority", 1),         # multicast traffic priority
+	ByteField("m_weight", 1),           # multicast traffic weight
+	BitField("unused_flags", 13),       # field reserved for unused flags
+	FlagsField("flags", None, 3, ["local_locator", "probe", "route"]),         # flag fields -  "L", "p", "R"  
+	ByteField("rloc_add"), 4),          # the actual RLOC address
 
 """
 class LispSMR(Packet):
