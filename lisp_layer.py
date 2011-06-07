@@ -102,7 +102,7 @@ class LISPHeader(Packet):
     name = "LISP header"
     fields_desc = [
     BitEnumField("type", 0, 4, _LISP_TYPES)
-    ]
+	]
 
 """
 LISP PACKET TYPE 1: Map-Request
@@ -190,7 +190,7 @@ class LISPRequestRLOCRecord(Packet):
         ConditionalField(IP6Field("source_eid_address", "2001:db8::1"),
             lambda pkt:pkt.source_eid_afi == socket.AF_INET6),
 	ByteField("eid_prefix", 4)
-    ]
+	]
 		
 """
         
@@ -237,8 +237,8 @@ class LISPMapReplyRecord(Packet):
     fields_desc = [
 	ByteField("record_ttl", 4),	    # ttl
 	ByteField("locator_count", 1),      # amount of locator records in the packet, see LISPReplyRLOC    
-	ByteField("eid_mask_length", 1)]    # mask length of the EID-space
-
+	ByteField("eid_mask_length", 1)     # mask length of the EID-space
+	]
 class LISPReplyRLOC(Packet):
     name = "Map Reply RLOC record, n times determined by the record count field"
     fields_desc = [
@@ -246,13 +246,14 @@ class LISPReplyRLOC(Packet):
 	ByteField("weight", 1),             # unicast traffic weight
 	ByteField("m_priority", 1),         # multicast traffic priority
 	ByteField("m_weight", 1),           # multicast traffic weight
-	BitField("unused_flags", 13),       # field reserved for unused flags
+	BitField("unused_flags", "0"*13, 13), 					   # field reserved for unused flags
 	FlagsField("flags", None, 3, ["local_locator", "probe", "route"]),         # flag fields -  "L", "p", "R"  
-	ByteField("rloc_add"), 4),          # the actual RLOC address
+	ByteField("rloc_add", 4)            # the actual RLOC address
+	]
 
 #assemble lisp packet
-def createLispMessage(type):
-	return IP()/UDP(sport=4342,dport=4342)/LispType(type=1)
+def createLispMessage():
+	return IP()/UDP(sport=4342,dport=4342)/LISPHeader()
 #debug mode
 if __name__ == "__main__":
 	interact(mydict=globals(), mybanner="lisp debug")
@@ -268,7 +269,6 @@ lisp-cons   4342/tcp   LISP-CONS Control
 lisp-control    4342/udp   LISP Data-Triggered Control
 
 We only implemented the LISP control plane
-
 """
 
 bind_layers( UDP, LISPHeader, dport=4342)
