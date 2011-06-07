@@ -142,7 +142,7 @@ class LISPHeader(Packet):
     """ first part of any lisp packet """
     name = "LISP header"
     fields_desc = [
-    BitEnumField("type", 0, 4, _LISP_TYPES)
+    BitEnumField("type", 0*4, 4, _LISP_TYPES),
 	]
 
 """
