@@ -250,28 +250,6 @@ class LISPReplyRLOC(Packet):
 	FlagsField("flags", None, 3, ["local_locator", "probe", "route"]),         # flag fields -  "L", "p", "R"  
 	ByteField("rloc_add"), 4),          # the actual RLOC address
 
-"""
-class LispSMR(Packet):
-	name = "smr bit that distinguishes new from old requests"
-	fields_desc = [ ShortField("smr", 1) ]
-
-
-class LispLocatorBits(Packet):
-	name = "locator bits"
-	fields_desc = [ ShortField("locatorbits", 1)]
-
-
-class LispNonce(Packet):
-	name = "nonce"
-	fields_desc = [ ShortField("nonce", int(random.randint(0,5000)))]
-
-
-class LispType(Packet):
-        name = "lisptype"
-        #fields_desc = [ BitEnumField("t", 0, 1, {0:"res",1:"req",2:"rep",3:"req",8:"open", 9:"pushadd",10:"pushdelete",11:"unreach"}) ]
-	fields_desc = [XShortField("type", 1)]
-"""
-
 #assemble lisp packet
 def createLispMessage(type):
 	return IP()/UDP(sport=4342,dport=4342)/LispType(type=1)
@@ -301,5 +279,3 @@ bind_layers( LISPHeader, LISPMapReply, type=2)
 bind_layers( LISPHeader, LISPMapRegister, type=3)
 bind_layers( LISPHeader, LISPMapNotify, type=4)
 # bind_layers( LISPHeader, LISPEncapsulatedControlMessage, type=8)
-
-
