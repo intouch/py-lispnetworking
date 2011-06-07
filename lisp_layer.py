@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.6
 from scapy.all import *
 from scapy.packet import *
 from scapy.fields import *
@@ -254,9 +254,6 @@ class LISPReplyRLOC(Packet):
 #assemble lisp packet
 def createLispMessage():
 	return IP()/UDP(sport=4342,dport=4342)/LISPHeader()
-#debug mode
-if __name__ == "__main__":
-	interact(mydict=globals(), mybanner="lisp debug")
 
 """
 Bind LISP into scapy stack
@@ -279,3 +276,11 @@ bind_layers( LISPHeader, LISPMapReply, type=2)
 bind_layers( LISPHeader, LISPMapRegister, type=3)
 bind_layers( LISPHeader, LISPMapNotify, type=4)
 # bind_layers( LISPHeader, LISPEncapsulatedControlMessage, type=8)
+
+""" start scapy shell """
+
+#debug mode
+if __name__ == "__main__":
+	interact(mydict=globals(), mybanner="lisp debug")
+
+
