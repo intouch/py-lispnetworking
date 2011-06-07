@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2.6
 from scapy.all import *
 from scapy.packet import *
 from scapy.fields import *
