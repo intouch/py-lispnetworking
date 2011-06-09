@@ -141,7 +141,10 @@ class LISPHeader(Packet):
 	BitField("padding", None, 9),
 	BitField("irc", None, 5),
 	ByteField("recordcount", 1),
-        ByteField("nonce", 8)           
+	XBitField("nonce", None, 64),
+	#TODO
+	ByteField("padded", 2),
+	ByteField("eidtest", 2)           
 ]
 
 """
@@ -201,9 +204,9 @@ class LISPMapRequest(Packet):
 	# 	 TODO: we need to fix socket.AF_INET6 here because in python/socket module IP6 is 30 but on the wire it will be 2
 	        ByteField("source_eid_afi", 2),
 	        ConditionalField(IPField("source_eid_address", "192.168.1.1"),
-	            lambda pkt:pkt.source_eid_afi == socket.AF_INET),
+	            lambda pkt:pkt.source_eid_afi==1),
 	        ConditionalField(IP6Field("source_eid_address", "2001:db8::1"),
-	            lambda pkt:pkt.source_eid_afi == socket.AF_INET6)
+	            lambda pkt:pkt.source_eid_afi==10)
 			]
 
 class LISPRequestRLOCRecord(Packet):
