@@ -27,6 +27,14 @@ class LISPAddressField(Field):
         elif getattr(pkt, self.fld_name) == socket.AF_INET6:
             return self._ip6_field.addfield(pkt, s, val)
     
+
+class DNS2(Packet):
+    name = "DNS2"
+    fields_desc = [ BitEnumField("opcode1", 0, 4, {0:"QUERY",1:"IQUERY",2:"STATUS"}),
+                    BitEnumField("opcode2", 0, 4, {0:"QUERY",1:"IQUERY",2:"STATUS"}) ]
+
+
+
 """
 A packet contains a standard outer IP header
 
@@ -122,7 +130,8 @@ class LISPHeader(Packet):
     """ first part of any lisp packet """
     name = "LISP header"
     fields_desc = [
-    BitEnumField("packettype", 0*4, 4, _LISP_TYPES),
+    BitEnumField("packettype", 0000, 4, _LISP_TYPES),
+    BitField("padding", 0000, 4)
 	]
 
 """
