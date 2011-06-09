@@ -119,23 +119,26 @@ _LISP_TYPES = { 0 : "reserved",
                 8 : "encapsulated_control_message" }
 
 class LISPHeader(Packet):
-    """ first part of any lisp packet """
-    name = "LISP header"
-    fields_desc = [
-#    BitEnumField("packettype", 0000, 4, _LISP_TYPES),
-    BitField("packettype", 1, 1),
-    BitField("p1", None, 6), 
-    ConditionalField(BitField("A", "0", 1), lambda pkt:pkt.packettype==0),
-    ConditionalField(BitField("A", "1", 1), lambda pkt:pkt.packettype==1),
-#    ConditionalField(BitField("M", 0, 1), lambda pkt:pkt.packettype==3),
-#    ConditionalField(BitField("P", 0, 1), lambda pkt:pkt.packettype==3),
-#    ConditionalField(BitField("S", 0, 1), lambda pkt:pkt.packettype==4),
-#    ConditionalField(BitField("p", 0, 1), lambda pkt:pkt.packettype==5),
-#    ConditionalField(BitField("s", 0, 1), lambda pkt:pkt.packettype==6),
-	]
-
-
-
+	""" first part of any lisp packet """
+	name = "LISP header"
+	fields_desc = [
+	BitEnumField("packettype", 0000, 4, _LISP_TYPES),
+#   BitField("packettype", 1, 1),
+#   BitField("p1", 111111, 6), 
+#      (temporary) hack in order to get parseable output with conditional fields. 
+#       setting the same variable in two conditional fields overwrites the first setting, even if the lambda is false. 
+#   ConditionalField(BitField("A", 1, 1), lambda pkt:pkt.packettype==0),
+#   ConditionalField(BitField("nA", 0, 1), lambda pkt:pkt.packettype==1)
+#   ConditionalField(BitField("M", 0, 1), lambda pkt:pkt.packettype==3),
+#   ConditionalField(BitField("P", 0, 1), lambda pkt:pkt.packettype==3),
+#   ConditionalField(BitField("S", 0, 1), lambda pkt:pkt.packettype==4),
+#   ConditionalField(BitField("p", 0, 1), lambda pkt:pkt.packettype==5),
+#   ConditionalField(BitField("s", 0, 1), lambda pkt:pkt.packettype==6),
+        FlagsField("flags", 0, 6, ["f1", "f2", "f3", "f4", "f5", "f6"]),
+	BitField("padding", None, 9),
+	BitField("irc", None, 5),
+	ByteField("recordcount", 1)	
+]
 
 """
 LISP PACKET TYPE 1: Map-Request
@@ -188,21 +191,23 @@ Packet format:
 """
 
 class LISPMapRequest(Packet):
-    name = "Map Request"
-    fields_desc = [
-        FlagsField("flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
-        BitField("padding", "0"*9, 9),
-        BitField("itr_rloc_count", "0"*5, 5),
-        ByteField("record_count", 0),
-        StrFixedLenField("nonce", int(random.randint(0,100000000)), 8),
-    # TODO: we need to fix socket.AF_INET6 here because in python/socket module IP6 is 30 but on the wire it will be 2
-        ShortField("source_eid_afi", socket.AF_INET6),
-#        ConditionalField(IPField("source_eid_address", "192.168.1.1"),
-#            lambda pkt:pkt.source_eid_afi == socket.AF_INET),
-#        ConditionalField(IP6Field("source_eid_address", "2001:db8::1"),
-#            lambda pkt:pkt.source_eid_afi == socket.AF_INET6),
+	name = "Map Request"
+	fields_desc = [
+		FlagsField("flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
+	        StrFixedLenField("nonce", int(random.randint(0,100000000)), 8),
+
+	# 	 TODO: we need to fix socket.AF_INET6 here because in python/socket module IP6 is 30 but on the wire it will be 2
+	        ShortField("source_eid_afi", socket.AF_INET6),
+
+	#        ConditionalField(IPField("source_eid_address", "192.168.1.1"),
+	#            lambda pkt:pkt.source_eid_afi == socket.AF_INET),
+	#        ConditionalField(IP6Field("source_eid_address", "2001:db8::1"),
+	#            lambda pkt:pkt.source_eid_afi == socket.AF_INET6),
+
         LISPAddressField("source_eid_afi", "source_eid_field")
-	]
+		]
+
+
 
 #class LISPRequestEIDRecord(Packet):
 	#source eid afi
