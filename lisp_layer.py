@@ -123,21 +123,25 @@ class LISPHeader(Packet):
 	name = "LISP header"
 	fields_desc = [
 	BitEnumField("packettype", 0000, 4, _LISP_TYPES),
-#   BitField("packettype", 1, 1),
-#   BitField("p1", 111111, 6), 
-#      (temporary) hack in order to get parseable output with conditional fields. 
-#       setting the same variable in two conditional fields overwrites the first setting, even if the lambda is false. 
-#   ConditionalField(BitField("A", 1, 1), lambda pkt:pkt.packettype==0),
-#   ConditionalField(BitField("nA", 0, 1), lambda pkt:pkt.packettype==1)
-#   ConditionalField(BitField("M", 0, 1), lambda pkt:pkt.packettype==3),
-#   ConditionalField(BitField("P", 0, 1), lambda pkt:pkt.packettype==3),
-#   ConditionalField(BitField("S", 0, 1), lambda pkt:pkt.packettype==4),
-#   ConditionalField(BitField("p", 0, 1), lambda pkt:pkt.packettype==5),
-#   ConditionalField(BitField("s", 0, 1), lambda pkt:pkt.packettype==6),
-        FlagsField("flags", 0, 6, ["f1", "f2", "f3", "f4", "f5", "f6"]),
+#   (temporary) hack in order to get parseable output with conditional fields. setting the same variable in two conditional fields overwrites the first setting, even if the lambda is false. 
+#	ConditionalField(BitField("A", 1, 1), lambda pkt:pkt.packettype==0),
+#	ConditionalField(BitField("nA", 0, 1), lambda pkt:pkt.packettype==1)
+#	ConditionalField(BitField("M", 0, 1), lambda pkt:pkt.packettype==3),
+#	ConditionalField(BitField("P", 0, 1), lambda pkt:pkt.packettype==3),
+#	ConditionalField(BitField("S", 0, 1), lambda pkt:pkt.packettype==4),
+#	ConditionalField(BitField("p", 0, 1), lambda pkt:pkt.packettype==5),
+#	ConditionalField(BitField("s", 0, 1), lambda pkt:pkt.packettype==6),
+
+#   flagfields will be more difficult to assign in packets, so switched to bitfields for now.
+#	FlagsField("flags", 0, 6, ["f1", "f2", "f3", "f4", "f5", "f6"]),
+
+#   TODO add comments for what these flagfields may contain
+
+	BitField("f1", 0, 1), BitField("f2", 0, 1), BitField("f3", 0, 1), BitField("f4", 0, 1), BitField("f5", 0, 1), BitField("f6", 0, 1),
 	BitField("padding", None, 9),
 	BitField("irc", None, 5),
-	ByteField("recordcount", 1)	
+	ByteField("recordcount", 1),
+        ByteField("nonce", 8)           
 ]
 
 """
@@ -193,20 +197,15 @@ Packet format:
 class LISPMapRequest(Packet):
 	name = "Map Request"
 	fields_desc = [
-		FlagsField("flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
-	        StrFixedLenField("nonce", int(random.randint(0,100000000)), 8),
-
+	#	FlagsField("flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
 	# 	 TODO: we need to fix socket.AF_INET6 here because in python/socket module IP6 is 30 but on the wire it will be 2
-	        ShortField("source_eid_afi", socket.AF_INET6),
+	        ByteField("source_eid_afi", 2)
+			]
 
 	#        ConditionalField(IPField("source_eid_address", "192.168.1.1"),
 	#            lambda pkt:pkt.source_eid_afi == socket.AF_INET),
 	#        ConditionalField(IP6Field("source_eid_address", "2001:db8::1"),
 	#            lambda pkt:pkt.source_eid_afi == socket.AF_INET6),
-
-        LISPAddressField("source_eid_afi", "source_eid_field")
-		]
-
 
 
 #class LISPRequestEIDRecord(Packet):
@@ -263,21 +262,13 @@ LISP PACKET TYPE 2: Map-Reply
 """
 
 
-class LISPMapReply(Packet):
-    name = "Map Reply Header"
-    fields_desc = [
-        FlagsField("flags", None, 3, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
-        BitField("padding", "0"*17, 17),     # reserved bytes, filled with 0's
-        ByteField("record_count", "0"*8),    # amount of records in a map reply
-        StrFixedLenField("nonce", int(random.randint(0,100000000)), 8)]            # nonce containing random integer
-
 class LISPMapReplyRecord(Packet):
     name = "Map Reply Records, n times determined by the 'record_count' from the header" 
     fields_desc = [
 	ByteField("record_ttl", 4),	    # ttl
 	ByteField("locator_count", 1),      # amount of locator records in the packet, see LISPReplyRLOC    
 	ByteField("eid_mask_length", 1)     # mask length of the EID-space
-	]
+		]
 class LISPReplyRLOC(Packet):
     name = "Map Reply RLOC record, n times determined by the record count field"
     fields_desc = [
@@ -288,7 +279,7 @@ class LISPReplyRLOC(Packet):
 	BitField("unused_flags", "0"*13, 13), 					   # field reserved for unused flags
 	FlagsField("flags", None, 3, ["local_locator", "probe", "route"]),         # flag fields -  "L", "p", "R"  
 	ByteField("rloc_add", 4)            # the actual RLOC address
-	]
+		]
 
 #assemble lisp packet
 def createLispMessage():
@@ -311,7 +302,7 @@ bind_layers( UDP, LISPHeader, dport=4342)
 bind_layers( UDP, LISPHeader, sport=4342)
 # when we are further we can let scapy decide the packetformat
 bind_layers( LISPHeader, LISPMapRequest, packettype=1)
-bind_layers( LISPHeader, LISPMapReply, packettype=2)
+bind_layers( LISPHeader, LISPMapReplyRecord, packettype=2)
 #bind_layers( LISPHeader, LISPMapRegister, type=3)	#TODO
 #bind_layers( LISPHeader, LISPMapNotify, type=4)	#TODO
 #bind_layers( LISPHeader, LISPEncapsulatedControlMessage, type=8) #TODO
