@@ -122,11 +122,12 @@ class LISPHeader(Packet):
     """ first part of any lisp packet """
     name = "LISP header"
     fields_desc = [
-    BitEnumField("packettype", 0000, 4, _LISP_TYPES),
-    BitField("p1", None, 7), #padding, if one flag is set then this works
-    ConditionalField(BitField("A", 0, 1), lambda pkt:pkt.packettype==1),
-    ConditionalField(BitField("A", 1, 1), lambda pkt:pkt.packettype==1),
-#    ConditionalField(BitField("M", 0, 1), lambda pkt:pkt.packettype==2),
+#    BitEnumField("packettype", 0000, 4, _LISP_TYPES),
+    BitField("packettype", 1, 1),
+    BitField("p1", None, 6), 
+    ConditionalField(BitField("A", "0", 1), lambda pkt:pkt.packettype==0),
+    ConditionalField(BitField("A", "1", 1), lambda pkt:pkt.packettype==1),
+#    ConditionalField(BitField("M", 0, 1), lambda pkt:pkt.packettype==3),
 #    ConditionalField(BitField("P", 0, 1), lambda pkt:pkt.packettype==3),
 #    ConditionalField(BitField("S", 0, 1), lambda pkt:pkt.packettype==4),
 #    ConditionalField(BitField("p", 0, 1), lambda pkt:pkt.packettype==5),
