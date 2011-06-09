@@ -2,6 +2,7 @@
 import scapy
 from scapy import *
 from scapy.all import *
+import IPy
 import socket,struct
 
 """ Will parse an IPField or an IP6Field depending on the value of the AFI field. """
@@ -204,8 +205,8 @@ class LISPMapRequest(Packet):
 	#            lambda pkt:pkt.source_eid_afi==10)
 			
         ByteField("afi", 2),
-	ConditionalField(IPField("source_eid_address", "127.0.0.1"), lambda pkt:pkt.afi==1),
-	ConditionalField(IP6Field("source_eid_address", "2000:053::1"), lambda pkt:pkt.afi==10)
+	ConditionalField(IPField("v4eid", "127.0.0.1"), lambda pkt:pkt.afi==1),
+	ConditionalField(IP6Field("v6eid", "2000:053::1"), lambda pkt:pkt.afi==10)
 ]
 
 
