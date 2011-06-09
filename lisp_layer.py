@@ -199,22 +199,12 @@ class LISPMapRequest(Packet):
 	fields_desc = [
 	#	FlagsField("flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
 	# 	 TODO: we need to fix socket.AF_INET6 here because in python/socket module IP6 is 30 but on the wire it will be 2
-	        ByteField("source_eid_afi", 2)
+	        ByteField("source_eid_afi", 2),
+	        ConditionalField(IPField("source_eid_address", "192.168.1.1"),
+	            lambda pkt:pkt.source_eid_afi == socket.AF_INET),
+	        ConditionalField(IP6Field("source_eid_address", "2001:db8::1"),
+	            lambda pkt:pkt.source_eid_afi == socket.AF_INET6)
 			]
-
-	#        ConditionalField(IPField("source_eid_address", "192.168.1.1"),
-	#            lambda pkt:pkt.source_eid_afi == socket.AF_INET),
-	#        ConditionalField(IP6Field("source_eid_address", "2001:db8::1"),
-	#            lambda pkt:pkt.source_eid_afi == socket.AF_INET6),
-
-
-#class LISPRequestEIDRecord(Packet):
-	#source eid afi
-	#source eid
-	#itr-rloc-afi
-	#itr-rloc-add
-
-    
 
 class LISPRequestRLOCRecord(Packet):
     name = "Map Request Record"
@@ -262,7 +252,7 @@ LISP PACKET TYPE 2: Map-Reply
 """
 
 
-class LISPMapReplyRecord(Packet):
+class LISPMapReply(Packet):
     name = "Map Reply Records, n times determined by the 'record_count' from the header" 
     fields_desc = [
 	ByteField("record_ttl", 4),	    # ttl
@@ -290,22 +280,21 @@ Bind LISP into scapy stack
 
 According to http://www.iana.org/assignments/port-numbers :
 
-lisp-data   4341/tcp   LISP Data Packets
-lisp-data   4341/udp   LISP Data Packets
-lisp-cons   4342/tcp   LISP-CONS Control
+lisp-data   	4341/tcp   LISP Data Packets
+lisp-data   	4341/udp   LISP Data Packets
+lisp-cons   	4342/tcp   LISP-CONS Control
 lisp-control    4342/udp   LISP Data-Triggered Control
 
-We only implemented the LISP control plane
 """
 
 bind_layers( UDP, LISPHeader, dport=4342)
 bind_layers( UDP, LISPHeader, sport=4342)
 # when we are further we can let scapy decide the packetformat
 bind_layers( LISPHeader, LISPMapRequest, packettype=1)
-bind_layers( LISPHeader, LISPMapReplyRecord, packettype=2)
-#bind_layers( LISPHeader, LISPMapRegister, type=3)	#TODO
-#bind_layers( LISPHeader, LISPMapNotify, type=4)	#TODO
-#bind_layers( LISPHeader, LISPEncapsulatedControlMessage, type=8) #TODO
+bind_layers( LISPHeader, LISPMapReply, packettype=2)
+#bind_layers( LISPHeader, LISPMapRegister, type=3)			#TODO
+#bind_layers( LISPHeader, LISPMapNotify, type=4)			#TODO
+#bind_layers( LISPHeader, LISPEncapsulatedControlMessage, type=8) 	#TODO
 
 """ start scapy shell """
 
