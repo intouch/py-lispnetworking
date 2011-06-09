@@ -123,8 +123,18 @@ class LISPHeader(Packet):
     name = "LISP header"
     fields_desc = [
     BitEnumField("packettype", 0000, 4, _LISP_TYPES),
-    BitField("padding", 0000, 4)
+    BitField("p1", None, 7), #padding, if one flag is set then this works
+    ConditionalField(BitField("A", 0, 1), lambda pkt:pkt.packettype==1),
+    ConditionalField(BitField("A", 1, 1), lambda pkt:pkt.packettype==1),
+#    ConditionalField(BitField("M", 0, 1), lambda pkt:pkt.packettype==2),
+#    ConditionalField(BitField("P", 0, 1), lambda pkt:pkt.packettype==3),
+#    ConditionalField(BitField("S", 0, 1), lambda pkt:pkt.packettype==4),
+#    ConditionalField(BitField("p", 0, 1), lambda pkt:pkt.packettype==5),
+#    ConditionalField(BitField("s", 0, 1), lambda pkt:pkt.packettype==6),
 	]
+
+
+
 
 """
 LISP PACKET TYPE 1: Map-Request
