@@ -1,9 +1,7 @@
 #!/usr/bin/env python2.6
+import scapy
+from scapy import *
 from scapy.all import *
-from scapy.packet import *
-from scapy.fields import *
-from scapy.ansmachine import *
-from scapy.layers.inet import UDP
 import socket,struct
 
 """ Will parse an IPField or an IP6Field depending on the value of the AFI field. """
@@ -138,13 +136,10 @@ class LISPHeader(Packet):
 #   TODO add comments for what these flagfields may contain
 
 	BitField("f1", 0, 1), BitField("f2", 0, 1), BitField("f3", 0, 1), BitField("f4", 0, 1), BitField("f5", 0, 1), BitField("f6", 0, 1),
-	BitField("padding", None, 9),
+	BitField("padding", 111111111, 9),
 	BitField("irc", None, 5),
-	ByteField("recordcount", 1),
-	XBitField("nonce", None, 64),
-	#TODO
-	ByteField("padded", 2),
-	ByteField("eidtest", 2)           
+	ByteField("recordcount", 3),
+	XBitField("nonce", None, 72), # its actually 64 (8x8), checking TODO
 ]
 
 """
@@ -202,12 +197,18 @@ class LISPMapRequest(Packet):
 	fields_desc = [
 	#	FlagsField("flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
 	# 	 TODO: we need to fix socket.AF_INET6 here because in python/socket module IP6 is 30 but on the wire it will be 2
-	        ByteField("source_eid_afi", 2),
-	        ConditionalField(IPField("source_eid_address", "192.168.1.1"),
-	            lambda pkt:pkt.source_eid_afi==1),
-	        ConditionalField(IP6Field("source_eid_address", "2001:db8::1"),
-	            lambda pkt:pkt.source_eid_afi==10)
-			]
+	#        ByteField("source_eid_afi", 2),
+	#        ConditionalField(IPField("source_eid_address", "192.168.1.1"),
+	#            lambda pkt:pkt.source_eid_afi==1),
+	#        ConditionalField(IP6Field("source_eid_address", "2001:db8::1"),
+	#            lambda pkt:pkt.source_eid_afi==10)
+			
+        ByteField("afi", 2),
+	ConditionalField(IPField("source_eid_address", "127.0.0.1"), lambda pkt:pkt.afi==1),
+	ConditionalField(IP6Field("source_eid_address", "2000:053::1"), lambda pkt:pkt.afi==10)
+]
+
+
 
 class LISPRequestRLOCRecord(Packet):
     name = "Map Request Record"
