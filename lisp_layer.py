@@ -2,7 +2,6 @@
 import scapy
 from scapy import *
 from scapy.all import *
-import IPy
 import socket,struct
 
 """ Will parse an IPField or an IP6Field depending on the value of the AFI field. """
@@ -138,7 +137,7 @@ class LISPHeader(Packet):
 #   TODO add comments for what these flagfields may contain
 
 	BitField("f1", 0, 1), BitField("f2", 0, 1), BitField("f3", 0, 1), BitField("f4", 0, 1), BitField("f5", 0, 1), BitField("f6", 0, 1),
-	BitField("padding", 111111111, 9),
+	BitField("reserved_fields", 000000000, 9),
 	BitField("irc", 0, 5),
 	ByteField("recordcount", 1),
 	XBitField("nonce", None, 72), # its actually 64 (8x8), checking TODO
@@ -158,13 +157,13 @@ Packet format:
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
        |                         . . . Nonce                           |
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-       |         Source-EID-AFI        |   Source EID Address  ...     |      class LISPaddressfield
+       |         Source-EID-AFI        |   Source EID Address  ...     |      class LISPsourceEID
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------     
-       |         ITR-RLOC-AFI 1        |    ITR-RLOC Address 1  ...    |      class LISPaddressfield
+       |         ITR-RLOC-AFI 1        |    ITR-RLOC Address 1  ...    |      class LISPsourceRLOC
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
        |                              ...                              |      ...
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-       |         ITR-RLOC-AFI n        |    ITR-RLOC Address n  ...    |      N x class LISPaddressfield
+       |         ITR-RLOC-AFI n        |    ITR-RLOC Address n  ...    |      N x class LISPsourceRLOC
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
      / |   Reserved    | EID mask-len  |        EID-prefix-AFI         |      N x class LISPrecord
    Rec +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      
@@ -186,28 +185,32 @@ Packet format:
 
 """
 
-class LISPaddressfield(Packet): # used for 4 byte fields that contain a AFI and a v4 or v6 address
-	t = 0
-	name = "Map Request Field (AFI + address)"
+class LISPsourceEID(Packet): 												# used for 4 byte fields that contain a AFI and a v4 or v6 address
+	name = "reply record containing the source eid address"
 	fields_desc = [
-	        ByteField("afi_eid", 2),								# read out the AFI
-		ConditionalField(IPField("v4_eid", "127.0.0.1"), lambda pkt:pkt.afi_eid==1),		# read out of the v4 AFI, this field is 1 by default
-		ConditionalField(IP6Field("v6_eid", "::1"), lambda pkt:pkt.afi_eid==10)			# TODO read out of the v6 AFI, not sure about AFI number yet 
+		ByteField("eid_src_afi", 2),										# read out the AFI
+		ConditionalField(IPField("v4_eid", '169.169.169.169'), lambda pkt:pkt.eid_src_afi==1),			# read out of the v4 AFI, this field is 1 by default
+		ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==10)				# TODO read out of the v6 AFI, not sure about AFI number yet 
 			]
 
+class LISPsourceRLOC(Packet):                                                                   		        # used for 4 byte fields that contain a AFI and a v4 or v6 address
+        name = "reply record containing the source eid address"
+        fields_desc = [
+                ByteField("eid_src_afi", 2),                                          		                        # read out the AFI
+                ConditionalField(IPField("v4_eid", '169.169.169.169'), lambda pkt:pkt.eid_src_afi==1),                  # read out of the v4 AFI, this field is 1 by default
+                ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==10)                         # TODO read out of the v6 AFI, not sure about AFI number yet 
+                        ]
 
 class LISPrecord(Packet):
 	name = "Map Request Record"
 	fields_desc = [
-		ByteField("padding", 4),								# todo
+		ByteField("reserved_fields", 1),									#padding
+		ByteField("eid_prefix_length", 1),
 		ByteField("afi", 2),
-#		ConditionalField(IPField("v4_eid1", "127.0.0.1"), lambda pkt:pkt.afi==1),               # read out of the v4 AFI, this field is 1 by default
-#        	ConditionalField(IP6Field("v6_eid1", "::1"), lambda pkt:pkt.afi==10)                    # TODO read out of the v6 AFI, not sure about AFI nr. 
-		IPField("v4_eid", "127.0.0.1")
+		ConditionalField(IPField("v4_eids", '10.0.0.1'), lambda pkt:pkt.afi==1), 		              	# read out of the v4 AFI, this field is 1 by default
+		ConditionalField(IP6Field("v6_eids", '2001::1'), lambda pkt:pkt.afi==10)                	    	# TODO read out of the v6 AFI, not sure about AFI nr. 
 			]
 
-# class LISPreplyrecord(Packet): #TODO
-			
 """
         
 LISP PACKET TYPE 2: Map-Reply
@@ -278,9 +281,10 @@ lisp-control    4342/udp   LISP Data-Triggered Control
 bind_layers( UDP, LISPHeader, dport=4342)
 bind_layers( UDP, LISPHeader, sport=4342)
 # when we are further we can let scapy decide the packetformat
-bind_layers( LISPHeader, LISPaddressfield, packettype=1)
+bind_layers( LISPHeader, LISPsourceEID, packettype=1)
 bind_layers( LISPHeader, LISPMapReply, packettype=2)
-bind_layers( LISPaddressfield, LISPrecord, afi_eid=1 )
+bind_layers( LISPsourceEID, LISPsourceRLOC )
+bind_layers( LISPsourceRLOC, LISPrecord)
 #bind_layers( LISPHeader, LISPMapRegister, type=3)			#TODO
 #bind_layers( LISPHeader, LISPMapNotify, type=4)			#TODO
 #bind_layers( LISPHeader, LISPEncapsulatedControlMessage, type=8) 	#TODO
@@ -291,4 +295,6 @@ bind_layers( LISPaddressfield, LISPrecord, afi_eid=1 )
 if __name__ == "__main__":
 	interact(mydict=globals(), mybanner="lisp debug")
 
-
+LISPsourceEID
+LISPsourceRLOC
+LISPrecord
