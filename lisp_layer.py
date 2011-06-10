@@ -153,23 +153,23 @@ Packet format:
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
        |Type=1 |A|M|P|S|p|s|    Reserved     |   IRC   | Record Count  |
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       |                         Nonce . . .                           |      class LISPRequest
+       |                         Nonce . . .                           |      class LISPHeader
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
        |                         . . . Nonce                           |
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-       |         Source-EID-AFI        |   Source EID Address  ...     |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      
-       |         ITR-RLOC-AFI 1        |    ITR-RLOC Address 1  ...    |      
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+  --- N x class LISPRequestRLOCRecord -
-       |                              ...                              |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      N = IRC field
-       |         ITR-RLOC-AFI n        |    ITR-RLOC Address n  ...    |
+       |         Source-EID-AFI        |   Source EID Address  ...     |      class LISPaddressfield
+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------     
+       |         ITR-RLOC-AFI 1        |    ITR-RLOC Address 1  ...    |      class LISPaddressfield
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-     / |   Reserved    | EID mask-len  |        EID-prefix-AFI         |      N x class LISPRequestEIDRecord
+       |                              ...                              |      ...
+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
+       |         ITR-RLOC-AFI n        |    ITR-RLOC Address n  ...    |      N x class LISPaddressfield
+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
+     / |   Reserved    | EID mask-len  |        EID-prefix-AFI         |      N x class LISPrecord
    Rec +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      
      \ |                       EID-prefix  ...                         |      N = Record Count field
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-       |                   Map-Reply Record  ...                       |      1 x EID to RLOC mapping
+       |                   Map-Reply Record  ...                       |      1 x LISPreplyrecord
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
        |                     Mapping Protocol Data                     |      Optional field (still not used?)
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
@@ -193,38 +193,27 @@ Packet format:
 
 """
 
-class LISPMapRequest(Packet):
-	name = "Map Request"
+class LISPaddressfield(Packet): # used for 4 byte fields that contain a AFI and a v4 or v6 address
+	name = "Map Request Field (AFI + address)"
 	fields_desc = [
-	#	FlagsField("flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
-	# 	 TODO: we need to fix socket.AF_INET6 here because in python/socket module IP6 is 30 but on the wire it will be 2
-	#        ByteField("source_eid_afi", 2),
-	#        ConditionalField(IPField("source_eid_address", "192.168.1.1"),
-	#            lambda pkt:pkt.source_eid_afi==1),
-	#        ConditionalField(IP6Field("source_eid_address", "2001:db8::1"),
-	#            lambda pkt:pkt.source_eid_afi==10)
-			
-        ByteField("afi", 2),
-	ConditionalField(IPField("v4eid", "127.0.0.1"), lambda pkt:pkt.afi==1),
-	ConditionalField(IP6Field("v6eid", "2000:053::1"), lambda pkt:pkt.afi==10)
-]
+        ByteField("afi_eid", 2),
+	ConditionalField(IPField("v4_eid", "127.0.0.1"), lambda pkt:pkt.afi==1),		# read out of the v4 AFI, this field is 1 by default
+	ConditionalField(IP6Field("v6_eid", "::1"), lambda pkt:pkt.afi==10)			# TODO read out of the v6 AFI, not sure about AFI nr. 
+		]
 
 
-
-class LISPRequestRLOCRecord(Packet):
+class LISPrecord(Packet):
     name = "Map Request Record"
     fields_desc = [
 	ByteField("reserved", 1),
 	ByteField("eid_mask_length", 1),
-    # TODO: we need to fix socket.AF_INET6 here because in python/socket module IP6 is 30 but on the wire it will be 2
-        ShortField("source_eid_afi", socket.AF_INET6),
-        ConditionalField(IPField("source_eid_address", "192.168.1.1"),
-            lambda pkt:pkt.source_eid_afi == socket.AF_INET),
-        ConditionalField(IP6Field("source_eid_address", "2001:db8::1"),
-            lambda pkt:pkt.source_eid_afi == socket.AF_INET6),
-	ByteField("eid_prefix", 4)
-	]
-		
+        ByteField("eid_afi", 2),
+	ConditionalField(IPField("v4_eid", "127.0.0.1"), lambda pkt:pkt.afi==1),                # read out of the v4 AFI, this field is 1 by default
+        ConditionalField(IP6Field("v6_eid", "::1"), lambda pkt:pkt.afi==10)                     # TODO read out of the v6 AFI, not sure about AFI nr. 
+		]
+
+# class LISPreplyrecord(Packet): #TODO
+			
 """
         
 LISP PACKET TYPE 2: Map-Reply
@@ -295,7 +284,10 @@ lisp-control    4342/udp   LISP Data-Triggered Control
 bind_layers( UDP, LISPHeader, dport=4342)
 bind_layers( UDP, LISPHeader, sport=4342)
 # when we are further we can let scapy decide the packetformat
-bind_layers( LISPHeader, LISPMapRequest, packettype=1)
+bind_layers( LISPHeader, LISPaddressfield, packettype=1)
+bind_layers( LISPaddressfield, LISPrecord)
+
+
 bind_layers( LISPHeader, LISPMapReply, packettype=2)
 #bind_layers( LISPHeader, LISPMapRegister, type=3)			#TODO
 #bind_layers( LISPHeader, LISPMapNotify, type=4)			#TODO
