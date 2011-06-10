@@ -25,6 +25,7 @@ class LISPAddressField(Field):
             return self._ip_field.addfield(pkt, s, val)
         elif getattr(pkt, self.fld_name) == socket.AF_INET6:
             return self._ip6_field.addfield(pkt, s, val)
+
     
 """
 A packet contains a standard outer IP header
@@ -138,8 +139,8 @@ class LISPHeader(Packet):
 
 	BitField("f1", 0, 1), BitField("f2", 0, 1), BitField("f3", 0, 1), BitField("f4", 0, 1), BitField("f5", 0, 1), BitField("f6", 0, 1),
 	BitField("padding", 111111111, 9),
-	BitField("irc", None, 5),
-	ByteField("recordcount", 3),
+	BitField("irc", 0, 5),
+	ByteField("recordcount", 1),
 	XBitField("nonce", None, 72), # its actually 64 (8x8), checking TODO
 ]
 
@@ -175,42 +176,35 @@ Packet format:
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
 
     code todo:
-        - decode A bit
-        - decode M bit
-        - decode P bit
-        - decode S bit
-        - decode p bit
-        - decode s bit
+        - decode A bit, - decode M bit, - decode P bit, - decode S bit, - decode p bit, - decode s bit
         - decode itr_rloc_count bits, these indicate how many itr-rlocs will follow, counting starts at 0
-        - decode record_count bits
-        - handle nonce
+        - decode record_count bits, - handle nonce
         - handle source_eid_afi && source_eid_address (0, 32 or 128 bits depending on source_eid_afi)
         - handle itr_rloc_afi && itr_rloc_address (32 or 128 bits depending on itr_rloc_afi), repeat depending on itr_rloc_count
-        - handle record
-            - a total record is 8 or 20 bytes depending on the eid_prefix_afi
-            - record_count indicates how many records are stored in the message
+        - handle record, - a total record is 8 or 20 bytes depending on the eid_prefix_afi, - record_count indicates how many records are stored in the message
         - handle Map-Reply Record in this context
 
 """
 
 class LISPaddressfield(Packet): # used for 4 byte fields that contain a AFI and a v4 or v6 address
+	t = 0
 	name = "Map Request Field (AFI + address)"
 	fields_desc = [
-        ByteField("afi_eid", 2),
-	ConditionalField(IPField("v4_eid", "127.0.0.1"), lambda pkt:pkt.afi==1),		# read out of the v4 AFI, this field is 1 by default
-	ConditionalField(IP6Field("v6_eid", "::1"), lambda pkt:pkt.afi==10)			# TODO read out of the v6 AFI, not sure about AFI nr. 
-		]
+	        ByteField("afi_eid", 2),								# read out the AFI
+		ConditionalField(IPField("v4_eid", "127.0.0.1"), lambda pkt:pkt.afi_eid==1),		# read out of the v4 AFI, this field is 1 by default
+		ConditionalField(IP6Field("v6_eid", "::1"), lambda pkt:pkt.afi_eid==10)			# TODO read out of the v6 AFI, not sure about AFI number yet 
+			]
 
 
 class LISPrecord(Packet):
-    name = "Map Request Record"
-    fields_desc = [
-	ByteField("reserved", 1),
-	ByteField("eid_mask_length", 1),
-        ByteField("eid_afi", 2),
-	ConditionalField(IPField("v4_eid", "127.0.0.1"), lambda pkt:pkt.afi==1),                # read out of the v4 AFI, this field is 1 by default
-        ConditionalField(IP6Field("v6_eid", "::1"), lambda pkt:pkt.afi==10)                     # TODO read out of the v6 AFI, not sure about AFI nr. 
-		]
+	name = "Map Request Record"
+	fields_desc = [
+		ByteField("padding", 4),								# todo
+		ByteField("afi", 2),
+#		ConditionalField(IPField("v4_eid1", "127.0.0.1"), lambda pkt:pkt.afi==1),               # read out of the v4 AFI, this field is 1 by default
+#        	ConditionalField(IP6Field("v6_eid1", "::1"), lambda pkt:pkt.afi==10)                    # TODO read out of the v6 AFI, not sure about AFI nr. 
+		IPField("v4_eid", "127.0.0.1")
+			]
 
 # class LISPreplyrecord(Packet): #TODO
 			
@@ -285,10 +279,8 @@ bind_layers( UDP, LISPHeader, dport=4342)
 bind_layers( UDP, LISPHeader, sport=4342)
 # when we are further we can let scapy decide the packetformat
 bind_layers( LISPHeader, LISPaddressfield, packettype=1)
-bind_layers( LISPaddressfield, LISPrecord)
-
-
 bind_layers( LISPHeader, LISPMapReply, packettype=2)
+bind_layers( LISPaddressfield, LISPrecord, afi_eid=1 )
 #bind_layers( LISPHeader, LISPMapRegister, type=3)			#TODO
 #bind_layers( LISPHeader, LISPMapNotify, type=4)			#TODO
 #bind_layers( LISPHeader, LISPEncapsulatedControlMessage, type=8) 	#TODO
