@@ -44,19 +44,15 @@ class LISPrequest(Packet):
 		ByteField("nonce", 8)
 			]
 
-class LISPreply(Packet):							#TODO check allignment
+class LISPreply(Packet):												#TODO check allignment
         """ request part after the first 4 bits of a LISP message """
 	name = "LISP reply packet"
 	fields_desc = [
 		FlagsField("flags", 0, 3, ["P", "E", "S"]),
-                BitField("reserved_fields", None, 18),
+                BitField("reserved_fields", None, 17),
                 ByteField("recordcount", 1),
                 ByteField("nonce", 8)
 			]
-
-	def getCount(self, pkt):
-		x = getattr(pkt,pkt.recordcount)
-		return x
 
 class LISPsourceEID(Packet): 												# used for 4 byte fields that contain a AFI and a v4 or v6 address
 	name = "reply record containing the source eid address"
