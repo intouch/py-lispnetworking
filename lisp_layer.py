@@ -26,97 +26,6 @@ class LISPAddressField(Field):
             return self._ip6_field.addfield(pkt, s, val)
 
     
-"""
-A packet contains a standard outer IP header
-
-IPv4 header:
-
-        0                   1                   2                   3
-        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       |Version|  IHL  |Type of Service|          Total Length         |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       |         Identification        |Flags|      Fragment Offset    |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       |  Time to Live | Protocol = 17 |         Header Checksum       |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       |                    Source Routing Locator                     |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       |                 Destination Routing Locator                   |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-IPv6 header: 
-
-        0                   1                   2                   3
-        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       |Version| Traffic Class |           Flow Label                  |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       |         Payload Length        | Next Header=17|   Hop Limit   |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       |                                                               |
-       +                                                               +
-       |                                                               |
-       +                     Source Routing Locator                    +
-       |                                                               |
-       +                                                               +
-       |                                                               |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       |                                                               |
-       +                                                               +
-       |                                                               |
-       +                  Destination Routing Locator                  +
-       |                                                               |
-       +                                                               +
-       |                                                               |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    
-    code todo:
-        - unpack outer_ip_header
-"""
-
-"""
-A packet always contains an outer UDP header
-
-        0                   1                   2                   3
-        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-     / |           Source Port         |         Dest Port             |
-   UDP +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-     \ |           UDP Length          |        UDP Checksum           |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-    code todo:
-        - unpack outer_udp_header
-"""
-
-"""
-After the IP and UDP header the LISP message follows. 
-
-A LISP control plane packet can be one of four types
-
-       Reserved:                          0    b'0000'
-       LISP Map-Request:                  1    b'0001'
-       LISP Map-Reply:                    2    b'0010'
-       LISP Map-Register:                 3    b'0011'
-       LISP Map-Notify:                   4    b'0100'
-       LISP Encapsulated Control Message: 8    b'1000'
-
-The first 4 bits define which type it is. Depending on the type a certain decoding
-strategy must be chosen. 
-
-    code todo:
-        - decypher which type is used and continue parsing the packet based on type
-
-"""
-
-_LISP_TYPES = { 0 : "reserved",
-                1 : "maprequest",
-                2 : "mapreply",
-                3 : "mapregister",
-                4 : "mapnotify",
-                8 : "encapsulated_control_message" }
-
 class LISPtype(Packet):
         """ first part of any lisp packet """
 	name = "LISP packet type"
@@ -125,58 +34,29 @@ class LISPtype(Packet):
 			]
 
 class LISPrequest(Packet):
-	""" first part of any lisp packet """
+	""" request part after the first 4 bits of a LISP message """
 	name = "LISP request packet"
 	fields_desc = [
-	FlagsField("flags", 0, 6, ["A", "M", "P", "S", "p", "s"]),
-	BitField("reserved_fields", 000000000, 9),
-	BitField("irc", 0, 5),
-	ByteField("recordcount", 1),
-	ByteField("nonce", 4),
-	ByteField("nonce", 4) 
-		]
+		FlagsField("flags", 0, 6, ["A", "M", "P", "S", "p", "s"]),
+		BitField("reserved_fields", None, 9),
+		BitField("irc", 0, 5),
+		ByteField("recordcount", 1),
+		ByteField("nonce", 8)
+			]
 
-"""
-LISP PACKET TYPE 1: Map-Request
+class LISPreply(Packet):							#TODO check allignment
+        """ request part after the first 4 bits of a LISP message """
+	name = "LISP reply packet"
+	fields_desc = [
+		FlagsField("flags", 0, 3, ["P", "E", "S"]),
+                BitField("reserved_fields", None, 18),
+                ByteField("recordcount", 1),
+                ByteField("nonce", 8)
+			]
 
-Packet format: 
-
-        0                   1                   2                   3
-        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-       |Type=1 |A|M|P|S|p|s|    Reserved     |   IRC   | Record Count  |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       |                         Nonce . . .                           |      class LISPHeader
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       |                         . . . Nonce                           |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-       |         Source-EID-AFI        |   Source EID Address  ...     |      class LISPsourceEID
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------     
-       |         ITR-RLOC-AFI 1        |    ITR-RLOC Address 1  ...    |      class LISPsourceRLOC
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-       |                              ...                              |      ...
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-       |         ITR-RLOC-AFI n        |    ITR-RLOC Address n  ...    |      N x class LISPsourceRLOC
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-     / |   Reserved    | EID mask-len  |        EID-prefix-AFI         |      N x class LISPrecord
-   Rec +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      
-     \ |                       EID-prefix  ...                         |      N = Record Count field
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-       |                   Map-Reply Record  ...                       |      1 x LISPreplyrecord
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-       |                     Mapping Protocol Data                     |      Optional field (still not used?)
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-
-    code todo:
-        - decode A bit, - decode M bit, - decode P bit, - decode S bit, - decode p bit, - decode s bit
-        - decode itr_rloc_count bits, these indicate how many itr-rlocs will follow, counting starts at 0
-        - decode record_count bits, - handle nonce
-        - handle source_eid_afi && source_eid_address (0, 32 or 128 bits depending on source_eid_afi)
-        - handle itr_rloc_afi && itr_rloc_address (32 or 128 bits depending on itr_rloc_afi), repeat depending on itr_rloc_count
-        - handle record, - a total record is 8 or 20 bytes depending on the eid_prefix_afi, - record_count indicates how many records are stored in the message
-        - handle Map-Reply Record in this context
-
-"""
+	def getCount(self, pkt):
+		x = getattr(pkt,pkt.recordcount)
+		return x
 
 class LISPsourceEID(Packet): 												# used for 4 byte fields that contain a AFI and a v4 or v6 address
 	name = "reply record containing the source eid address"
@@ -203,37 +83,6 @@ class LISPrecord(Packet):
 		ConditionalField(IPField("v4_eids", '10.0.0.1'), lambda pkt:pkt.record_afi==1),		              	# read out of the v4 AFI, this field is 1 by default
 		ConditionalField(IP6Field("v6_eids", '2001::1'), lambda pkt:pkt.record_afi==10)                	    	# TODO read out of the v6 AFI, not sure about AFI nr. 
 			]
-
-"""
-        
-LISP PACKET TYPE 2: Map-Reply
-
-	0                   1                   2                   3
-        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-       |Type=2 |P|E|S|          Reserved               | Record Count  |
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       |                         Nonce . . .                           |      class LISPMapReply
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       |                         . . . Nonce                           |
-   +-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-   |   |                          Record  TTL                          |
-   |   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   R   | Locator Count | EID mask-len  | ACT |A|      Reserved         |      N x class LISPReplyRecord
-   e   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   c   | Rsvd  |  Map-Version Number   |       EID-prefix-AFI          |      N = Record Count field
-   o   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   r   |                          EID-prefix                           |
-   d   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-   |  /|    Priority   |    Weight     |  M Priority   |   M Weight    |
-   | L +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      N x class LISPReplyRLOC
-   | o |        Unused Flags     |L|p|R|           Loc-AFI             |
-   | c +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      N = Locator Count field
-   |  \|                             Locator                           |
-   +-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-       |                     Mapping Protocol Data                     |      1 x Authentication (optional!)
-       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ }-------------------------------------
-"""
 
 
 class LISPMapReply(Packet):
@@ -274,9 +123,7 @@ lisp-control    4342/udp   LISP Data-Triggered Control
 bind_layers( UDP, LISPtype, dport=4342)
 bind_layers( UDP, LISPtype, sport=4342)
 bind_layers( LISPtype, LISPrequest, packettype=1)
-bind_layers( LISPtype, LISPMapReply, packettype=2)
-bind_layers( LISPsourceEID, LISPsourceRLOC )
-bind_layers( LISPsourceRLOC, LISPrecord)
+bind_layers( LISPtype, LISPreply, packettype=2)
 #bind_layers( LISPHeader, LISPMapRegister, type=3)			#TODO
 #bind_layers( LISPHeader, LISPMapNotify, type=4)			#TODO
 #bind_layers( LISPHeader, LISPEncapsulatedControlMessage, type=8) 	#TODO
