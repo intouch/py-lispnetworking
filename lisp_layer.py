@@ -117,31 +117,24 @@ _LISP_TYPES = { 0 : "reserved",
                 4 : "mapnotify",
                 8 : "encapsulated_control_message" }
 
-class LISPHeader(Packet):
-	""" first part of any lisp packet """
-	name = "LISP header"
+class LISPtype(Packet):
+        """ first part of any lisp packet """
+	name = "LISP packet type"
 	fields_desc = [
-	BitEnumField("packettype", 0000, 4, _LISP_TYPES),
-#   (temporary) hack in order to get parseable output with conditional fields. setting the same variable in two conditional fields overwrites the first setting, even if the lambda is false. 
-#	ConditionalField(BitField("A", 1, 1), lambda pkt:pkt.packettype==0),
-#	ConditionalField(BitField("nA", 0, 1), lambda pkt:pkt.packettype==1)
-#	ConditionalField(BitField("M", 0, 1), lambda pkt:pkt.packettype==3),
-#	ConditionalField(BitField("P", 0, 1), lambda pkt:pkt.packettype==3),
-#	ConditionalField(BitField("S", 0, 1), lambda pkt:pkt.packettype==4),
-#	ConditionalField(BitField("p", 0, 1), lambda pkt:pkt.packettype==5),
-#	ConditionalField(BitField("s", 0, 1), lambda pkt:pkt.packettype==6),
+		BitEnumField("packettype", None, 4, { 0 : "reserved", 1 : "maprequest", 2 : "mapreply", 3 : "mapregister", 4 : "mapnotify", 8 : "encapsulated_control_message" })
+			]
 
-#   flagfields will be more difficult to assign in packets, so switched to bitfields for now.
-#	FlagsField("flags", 0, 6, ["f1", "f2", "f3", "f4", "f5", "f6"]),
-
-#   TODO add comments for what these flagfields may contain
-
-	BitField("f1", 0, 1), BitField("f2", 0, 1), BitField("f3", 0, 1), BitField("f4", 0, 1), BitField("f5", 0, 1), BitField("f6", 0, 1),
+class LISPrequest(Packet):
+	""" first part of any lisp packet """
+	name = "LISP request packet"
+	fields_desc = [
+	FlagsField("flags", 0, 6, ["A", "M", "P", "S", "p", "s"]),
 	BitField("reserved_fields", 000000000, 9),
 	BitField("irc", 0, 5),
 	ByteField("recordcount", 1),
-	XBitField("nonce", None, 72), # its actually 64 (8x8), checking TODO
-]
+	ByteField("nonce", 4),
+	ByteField("nonce", 4) 
+		]
 
 """
 LISP PACKET TYPE 1: Map-Request
@@ -189,16 +182,16 @@ class LISPsourceEID(Packet): 												# used for 4 byte fields that contain a
 	name = "reply record containing the source eid address"
 	fields_desc = [
 		ByteField("eid_src_afi", 2),										# read out the AFI
-		ConditionalField(IPField("v4_eid", '169.169.169.169'), lambda pkt:pkt.eid_src_afi==1),			# read out of the v4 AFI, this field is 1 by default
+		ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),				# read out of the v4 AFI, this field is 1 by default
 		ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==10)				# TODO read out of the v6 AFI, not sure about AFI number yet 
 			]
 
 class LISPsourceRLOC(Packet):                                                                   		        # used for 4 byte fields that contain a AFI and a v4 or v6 address
         name = "reply record containing the source eid address"
         fields_desc = [
-                ByteField("eid_src_afi", 2),                                          		                        # read out the AFI
-                ConditionalField(IPField("v4_eid", '169.169.169.169'), lambda pkt:pkt.eid_src_afi==1),                  # read out of the v4 AFI, this field is 1 by default
-                ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==10)                         # TODO read out of the v6 AFI, not sure about AFI number yet 
+                ByteField("rloc_src_afi", 2),                                          		                        # read out the AFI
+                ConditionalField(IPField("v4_eid", '192.168.1.1'), lambda pkt:pkt.rloc_src_afi==1),	                # read out of the v4 AFI, this field is 1 by default
+                ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.rloc_src_afi==10)                        # TODO read out of the v6 AFI, not sure about AFI number yet 
                         ]
 
 class LISPrecord(Packet):
@@ -206,9 +199,9 @@ class LISPrecord(Packet):
 	fields_desc = [
 		ByteField("reserved_fields", 1),									#padding
 		ByteField("eid_prefix_length", 1),
-		ByteField("afi", 2),
-		ConditionalField(IPField("v4_eids", '10.0.0.1'), lambda pkt:pkt.afi==1), 		              	# read out of the v4 AFI, this field is 1 by default
-		ConditionalField(IP6Field("v6_eids", '2001::1'), lambda pkt:pkt.afi==10)                	    	# TODO read out of the v6 AFI, not sure about AFI nr. 
+		ByteField("record_afi", 2),
+		ConditionalField(IPField("v4_eids", '10.0.0.1'), lambda pkt:pkt.record_afi==1),		              	# read out of the v4 AFI, this field is 1 by default
+		ConditionalField(IP6Field("v6_eids", '2001::1'), lambda pkt:pkt.record_afi==10)                	    	# TODO read out of the v6 AFI, not sure about AFI nr. 
 			]
 
 """
@@ -264,7 +257,7 @@ class LISPReplyRLOC(Packet):
 
 #assemble lisp packet
 def createLispMessage():
-	return IP()/UDP(sport=4342,dport=4342)/LISPHeader()
+	return IP()/UDP(sport=4342,dport=4342)/LISPHeader(f3=1,f4=1)/LISPsourceEID(eid_src_afi=1)/LISPsourceRLOC(rloc_src_afi=1)/LISPrecord(record_afi=1,reserved_fields=0,eid_prefix_length=1)
 
 """
 Bind LISP into scapy stack
@@ -278,11 +271,10 @@ lisp-control    4342/udp   LISP Data-Triggered Control
 
 """
 
-bind_layers( UDP, LISPHeader, dport=4342)
-bind_layers( UDP, LISPHeader, sport=4342)
-# when we are further we can let scapy decide the packetformat
-bind_layers( LISPHeader, LISPsourceEID, packettype=1)
-bind_layers( LISPHeader, LISPMapReply, packettype=2)
+bind_layers( UDP, LISPtype, dport=4342)
+bind_layers( UDP, LISPtype, sport=4342)
+bind_layers( LISPtype, LISPrequest, packettype=1)
+bind_layers( LISPtype, LISPMapReply, packettype=2)
 bind_layers( LISPsourceEID, LISPsourceRLOC )
 bind_layers( LISPsourceRLOC, LISPrecord)
 #bind_layers( LISPHeader, LISPMapRegister, type=3)			#TODO
@@ -295,6 +287,4 @@ bind_layers( LISPsourceRLOC, LISPrecord)
 if __name__ == "__main__":
 	interact(mydict=globals(), mybanner="lisp debug")
 
-LISPsourceEID
-LISPsourceRLOC
-LISPrecord
+
