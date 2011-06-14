@@ -95,7 +95,7 @@ class LISPType(Packet):
         BitEnumField("packettype", None, 4, _LISP_TYPES),
     ]
 
-class LISPSourceEID(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
+class LISPSourceRLOC(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
     name = "reply record containing the source eid address"
     fields_desc = [
         ByteField("eid_src_afi", 2),                                                        # read out the AFI
@@ -112,7 +112,10 @@ class LISPRequest(Packet):
         BitField("reserved_fields", None, 9),
         BitField("itr_rloc_count", 0, 5),
         ByteField("recordcount", 1),
-        ByteField("nonce", 8)
+        ByteField("nonce", 8),
+        ByteField("source_eid_afi", 1),
+        ByteField("source_eid_address", 1),
+        PacketListField("rloc_records",[], LISPSourceRLOC, length_from=lambda pkt:pkt.itr_rloc_count)
     ]
 
 class LISPReply(Packet):                                                    
@@ -123,7 +126,8 @@ class LISPReply(Packet):
         BitField("reserved_fields", None, 17),
         ByteField("recordcount", 0),
         ByteField("nonce", 8),
-        PacketListField("parameters",[], LISPSourceEID, length_from=lambda pkt:pkt.recordcount)
+        ByteField("source_eid_afi", 1),
+        ByteField("source_eid_address", 1),
     ]
 
 class LISPSourceEID(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
@@ -132,14 +136,6 @@ class LISPSourceEID(Packet):                                                    
         ByteField("eid_src_afi", 2),                                                        # read out the AFI
         ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
         ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==10)     # TODO read out of the v6 AFI, not sure about AFI number yet 
-    ]
-
-class LISPSourceRLOC(Packet):                                                               # used for 4 byte fields that contain a AFI and a v4 or v6 address
-    name = "reply record containing the source eid address"
-    fields_desc = [
-        ByteField("rloc_src_afi", 2),                                                       # read out the AFI
-        ConditionalField(IPField("v4_eid", '192.168.1.1'), lambda pkt:pkt.rloc_src_afi==1), # read out of the v4 AFI, this field is 1 by default
-        ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.rloc_src_afi==10)    # TODO read out of the v6 AFI, not sure about AFI number yet 
     ]
 
 class LISPRecord(Packet):
