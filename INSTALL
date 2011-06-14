@@ -8,17 +8,26 @@ To use this library you should install the following:
    
 MacOSX Guide:
 
-- install macports ( obtain the software here http://www.macports.org/ )
-    $ git clone https://job@github.com/intouch/py-lispnetworking.git
-    $ cd py-lispnetworking
-    $ sudo port install python26 py26-virtualenv libdnet py26-libdnet
-    $ virtualenv-2.6 .
-    $ source bin/activate
-    $ pip install pcapy hg+http://hg.secdev.org/scapy yolk
+    Install macports from http://www.macports.org/ 
 
-eventueel: pip install libpcap
+    Install git-core
+        
+        $ sudo port install git-core
+    
+    Clone the repo into the project directory
 
+        $ git clone https://job@github.com/intouch/py-lispnetworking.git
 
+    Install virtualenv and friends
+
+        $ sudo port install python26 py26-virtualenv libdnet py26-libdnet
+
+    Setup virtualenv
+
+        $ cd py-lispnetworking
+        $ virtualenv-2.6 .
+        $ source bin/activate
+        $ pip install pcapy hg+http://hg.secdev.org/scapy yolk
 
 Ubuntu Guide:
 
