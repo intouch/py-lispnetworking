@@ -10,3 +10,7 @@ The "various_lisp_packets.pcap" file is also hosted here:
 
     http://www.cloudshark.org/captures/0c02896e2b0e
 
+The "lcaf_instanceid.pcap" file contains a few snippets with traffic that adhere
+to the http://tools.ietf.org/html/draft-farinacci-lisp-lcaf-05 internet draft.
+
+    It can also be viewed online: http://www.cloudshark.org/captures/d17164f125b2
