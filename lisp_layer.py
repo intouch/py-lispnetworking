@@ -124,8 +124,8 @@ lisp-control    4342/udp   LISP Data-Triggered Control
 
 bind_layers( UDP, LISPType, dport=4342)
 bind_layers( UDP, LISPType, sport=4342)
-bind_layers( LISPtype, LISPRequest, packettype=1)
-bind_layers( LISPtype, LISPReply, packettype=2)
+bind_layers( LISPType, LISPRequest, packettype=1)
+bind_layers( LISPType, LISPReply, packettype=2)
 #bind_layers( LISPHeader, LISPMapRegister, type=3)			#TODO
 #bind_layers( LISPHeader, LISPMapNotify, type=4)			#TODO
 #bind_layers( LISPHeader, LISPEncapsulatedControlMessage, type=8) 	#TODO
