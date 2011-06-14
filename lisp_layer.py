@@ -95,13 +95,27 @@ class LISPSourceEID(Packet):                                                    
     ]
 
 class LISPRecord(Packet):
-    name = "Map Request Record"
+    name = "Mapping Record"
     fields_desc = [
-        ByteField("reserved_fields", 1),                                                    #padding
-        ByteField("eid_prefix_length", 1),
-        ByteField("record_afi", 2),
-        ConditionalField(IPField("v4_eids", '10.0.0.1'), lambda pkt:pkt.record_afi==1),     # read out of the v4 AFI, this field is 1 by default
-        ConditionalField(IP6Field("v6_eids", '2001::1'), lambda pkt:pkt.record_afi==10)     # TODO read out of the v6 AFI, not sure about AFI nr. 
+        ShortField("record_ttl", 0),
+        ByteField("locator_count", 0),
+        ByteField("eid_mask_length", 0),
+        BitField("ACT", 0, 3),
+        BitField("A", 0, 1),
+        BitField("reserved", 0, 16),
+        BitField("map_version_number", 0, 12),
+        ShortField("eid_prefix_afi", 0),
+        IPField("eid_prefix", "2.2.2.2"),
+#        ConditionalField(IPField("v4_eids", '10.0.0.1'), lambda pkt:pkt.record_afi==1),     # read out of the v4 AFI, this field is 1 by default
+#        ConditionalField(IP6Field("v6_eids", '2001::1'), lambda pkt:pkt.record_afi==2)     # TODO read out of the v6 AFI, not sure about AFI nr. 
+        ByteField("priority", 0),
+        ByteField("weight", 0),
+        ByteField("m_priority", 0),
+        ByteField("m_weight", 0),
+        BitField("reserved", 0, 13),
+        FlagsField("flags", 0, 3, ["L", "p", "R"]),
+        ShortField("locator_afi", 0),
+        IPField("locator_address", "1.1.1.1"),
     ]
 
 class LISPMapReplyRLOC(Packet):
@@ -140,10 +154,7 @@ class LISPMapReply(Packet):
         ShortField("reserved_fields", 0),
         ByteField("recordcount", 0),
         XLongField("nonce", 0),
-
-# tot ^^ klopt
-        XByteField("source_eid_afi", 0),
-        IPField("source_eid_address", "192.168.53.3"),
+        LISPRecord,
     ]
 
 """ assemble a test LISP packet """
