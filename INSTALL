@@ -29,6 +29,8 @@ MACOSX GUIDE:
         $ source bin/activate
         $ pip install pcapy hg+http://hg.secdev.org/scapy yolk pyx
 
+    Now continue with Step 1 below. 
+
 UBUNTU GUIDE:
 
     Setup virtualenv and python
@@ -50,12 +52,15 @@ UBUNTU GUIDE:
         $ source bin/activate
         $ pip install pcapy hg+http://hg.secdev.org/scapy yolk pyx
 
-STARTING THE SCAPY SHELL WITH LISP GOODNESS
+    Now continue with Step 1 below. 
+
+
+Step 1: STARTING THE SCAPY SHELL WITH LISP GOODNESS
 
     Start the lisp_layer program
         
         $ ./lisp_layer.py
 
-EXIT THE ENVIROMENT
+Step 2: EXIT THE ENVIROMENT
 
         $ deactivate
