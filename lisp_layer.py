@@ -95,6 +95,15 @@ class LISPType(Packet):
         BitEnumField("packettype", None, 4, _LISP_TYPES),
     ]
 
+class LISPSourceEID(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
+    name = "reply record containing the source eid address"
+    fields_desc = [
+        ByteField("eid_src_afi", 2),                                                        # read out the AFI
+        ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
+        ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==10)     # TODO read out of the v6 AFI, not sure about AFI number yet 
+         ]
+
+
 class LISPRequest(Packet):
     """ request part after the first 4 bits of a LISP message """
     name = "LISP request packet"
@@ -112,8 +121,9 @@ class LISPReply(Packet):
     fields_desc = [
         FlagsField("flags", 0, 3, ["probe", "echo_nonce_alg", "security"]),
         BitField("reserved_fields", None, 17),
-        LISPRecordcount("recordcount", 0, "rc"),
-        ByteField("nonce", 8)
+        ByteField("recordcount", 0),
+        ByteField("nonce", 8),
+        PacketListField("parameters",[], LISPSourceEID, length_from=lambda pkt:pkt.recordcount)
     ]
 
 class LISPSourceEID(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
@@ -121,7 +131,24 @@ class LISPSourceEID(Packet):                                                    
     fields_desc = [
         ByteField("eid_src_afi", 2),                                                        # read out the AFI
         ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
-        ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==10)     # TODO read out of the v6 AFI, not sure about AFI number yet 
+        Conditi"ckettype= mapreply
+###[ LISP reply packet ]###
+                         flags= security
+                                          reserved_fields= 0L
+                                                           recordcount= 2
+                                                                            nonce= 174
+                                                                                             \parameters\
+                                                                                                               |###[ reply record containing the source eid address ]###
+                                                                                                                                 |  eid_src_afi= 146
+###[ Raw ]###
+                                                                                                                                                     load= '\xb5WO\x84\x9c\xd0\x00\x00\x05\xa0\x01 \x10\x00\x00\x00\x00\x01\xac\x10\x1f\x01\x00d\xff\x00\x00\x07\x00\x01\xd4\x1a\xc5\x03'
+                                                                                                                                                     >>> quit()
+                                                                                                                                                     marek@mini:~/py-lispnetworking$ ./lisp_layer.py 
+                                                                                                                                                     Welcome to Scapy (2.1.0)
+                                                                                                                                                     lisp debug
+                                                                                                                                                     >>> a=rdpcap("./1.pcap")
+                                                                                                                                                     >>> a[10]
+                                                                                                                                                     <Ether  dst=00:1a:e3:dc:2c:80 src=00:1f:6c:c3:2a:92 type=0x8100 |<Dot1Q  prio=0L id=0L vlan=105L type=0x800 |<IP  version=4L ihl=5L tos=0xc0 len=60 id=12 flags= frag=0L ttl=32 proto=udp chksum=0xc7f0 src=92.254.28.189 dst=85.184.2.130 options=[] |<UDP  sport=4342 dport=4342 len=40 conalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==10)     # TODO read out of the v6 AFI, not sure about AFI number yet 
     ]
 
 class LISPSourceRLOC(Packet):                                                               # used for 4 byte fields that contain a AFI and a v4 or v6 address
@@ -167,6 +194,7 @@ class LISPReplyRLOC(Packet):
 def createLispMessage():
     return IP()/UDP(sport=4342,dport=4342)/LISPType()/LISPRequest()/LISPSourceRLOC()
 
+
 """
 Bind LISP into scapy stack
 
@@ -183,7 +211,7 @@ bind_layers( UDP, LISPType, dport=4342)
 bind_layers( UDP, LISPType, sport=4342)
 bind_layers( LISPType, LISPRequest, packettype=1)
 bind_layers( LISPType, LISPReply, packettype=2)
-bind_layers( LISPRequest, LISPSourceEID )
+#bind_layers( LISPRequest, LISPSourceEID )
 
 """ start scapy shell """
 #debug mode
