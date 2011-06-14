@@ -25,36 +25,42 @@ class LISPAddressField(Field):
         elif getattr(pkt, self.fld_name) == socket.AF_INET6:
             return self._ip6_field.addfield(pkt, s, val)
 
+_LISP_TYPES = { 0 : "reserved",
+                1 : "maprequest",
+                2 : "mapreply",
+                3 : "mapregister",
+                4 : "mapnotify",
+                8 : "encapsulated_control_message" }
     
-class LISPtype(Packet):
+class LISPType(Packet):
         """ first part of any lisp packet """
 	name = "LISP packet type"
 	fields_desc = [
-		BitEnumField("packettype", None, 4, { 0 : "reserved", 1 : "maprequest", 2 : "mapreply", 3 : "mapregister", 4 : "mapnotify", 8 : "encapsulated_control_message" })
+		BitEnumField("packettype", None, 4, _LISP_TYPES),
 			]
 
-class LISPrequest(Packet):
+class LISPRequest(Packet):
 	""" request part after the first 4 bits of a LISP message """
 	name = "LISP request packet"
 	fields_desc = [
-		FlagsField("flags", 0, 6, ["A", "M", "P", "S", "p", "s"]),
+		FlagsField("flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
 		BitField("reserved_fields", None, 9),
-		BitField("irc", 0, 5),
-		ByteField("recordcount", 1),
+		BitField("itr_rloc_count", 0, 5),
+		ByteField("record_count", 1),
 		ByteField("nonce", 8)
 			]
 
-class LISPreply(Packet):												#TODO check allignment
+class LISPReply(Packet):												#TODO check allignment
         """ request part after the first 4 bits of a LISP message """
 	name = "LISP reply packet"
 	fields_desc = [
-		FlagsField("flags", 0, 3, ["P", "E", "S"]),
+		FlagsField("flags", 0, 3, ["probe", "echo_nonce_alg", "security"]),
                 BitField("reserved_fields", None, 17),
                 ByteField("recordcount", 1),
                 ByteField("nonce", 8)
 			]
 
-class LISPsourceEID(Packet): 												# used for 4 byte fields that contain a AFI and a v4 or v6 address
+class LISPSourceEID(Packet): 												# used for 4 byte fields that contain a AFI and a v4 or v6 address
 	name = "reply record containing the source eid address"
 	fields_desc = [
 		ByteField("eid_src_afi", 2),										# read out the AFI
@@ -62,7 +68,7 @@ class LISPsourceEID(Packet): 												# used for 4 byte fields that contain a
 		ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==10)				# TODO read out of the v6 AFI, not sure about AFI number yet 
 			]
 
-class LISPsourceRLOC(Packet):                                                                   		        # used for 4 byte fields that contain a AFI and a v4 or v6 address
+class LISPSourceRLOC(Packet):                                                                   		        # used for 4 byte fields that contain a AFI and a v4 or v6 address
         name = "reply record containing the source eid address"
         fields_desc = [
                 ByteField("rloc_src_afi", 2),                                          		                        # read out the AFI
@@ -70,7 +76,7 @@ class LISPsourceRLOC(Packet):                                                   
                 ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.rloc_src_afi==10)                        # TODO read out of the v6 AFI, not sure about AFI number yet 
                         ]
 
-class LISPrecord(Packet):
+class LISPRecord(Packet):
 	name = "Map Request Record"
 	fields_desc = [
 		ByteField("reserved_fields", 1),									#padding
@@ -116,10 +122,10 @@ lisp-control    4342/udp   LISP Data-Triggered Control
 
 """
 
-bind_layers( UDP, LISPtype, dport=4342)
-bind_layers( UDP, LISPtype, sport=4342)
-bind_layers( LISPtype, LISPrequest, packettype=1)
-bind_layers( LISPtype, LISPreply, packettype=2)
+bind_layers( UDP, LISPType, dport=4342)
+bind_layers( UDP, LISPType, sport=4342)
+bind_layers( LISPtype, LISPRequest, packettype=1)
+bind_layers( LISPtype, LISPReply, packettype=2)
 #bind_layers( LISPHeader, LISPMapRegister, type=3)			#TODO
 #bind_layers( LISPHeader, LISPMapNotify, type=4)			#TODO
 #bind_layers( LISPHeader, LISPEncapsulatedControlMessage, type=8) 	#TODO
