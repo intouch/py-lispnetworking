@@ -94,6 +94,7 @@ class LISPMapReply(Packet):
         ByteField("locator_count", 1),      # amount of locator records in the packet, see LISPReplyRLOC    
         ByteField("eid_mask_length", 1)     # mask length of the EID-space
     ]
+
 class LISPReplyRLOC(Packet):
     name = "Map Reply RLOC record, n times determined by the record count field"
     fields_desc = [
