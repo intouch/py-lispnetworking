@@ -6,17 +6,17 @@ To use this library you should install the following:
     - virtualenv 2.6
     - scapy 2.2.0-dev
    
-MacOSX Guide:
+MACOSX GUIDE:
 
     Install macports from http://www.macports.org/ 
 
-    Install git-core
+    Install git-core and mercurial
         
-        $ sudo port install git-core
+        $ sudo port install git-core mercurial
     
     Clone the repo into the project directory
 
-        $ git clone https://job@github.com/intouch/py-lispnetworking.git
+        $ git clone https://github.com/intouch/py-lispnetworking.git
 
     Install virtualenv and friends
 
@@ -27,27 +27,35 @@ MacOSX Guide:
         $ cd py-lispnetworking
         $ virtualenv-2.6 .
         $ source bin/activate
-        $ pip install pcapy hg+http://hg.secdev.org/scapy yolk
+        $ pip install pcapy hg+http://hg.secdev.org/scapy yolk pyx
 
-Ubuntu Guide:
+UBUNTU GUIDE:
 
     Setup virtualenv and python
 
         $ sudo apt-get install libxslt1-dev libxml2-dev python-virtualenv python-pip python-dev python2.6
 
-    Install git-core
+    Install git-core mercurial, libpcap0.8, libpcap0.8-dev
 
-        $ sudo apt-get install git-core
+        $ sudo apt-get install git-core mercurial libpcap0.8 libpcap0.8-dev
 
     Clone repo from github.com
 
-        $ git clone https://job@github.com/intouch/py-lispnetworking.git
+        $ git clone https://github.com/intouch/py-lispnetworking.git
 
     Enter project directory and setup virtualenv
 
         $ cd py-lispnetworking
-        $ virtualenv-2.6 .
+        $ virtualenv .
         $ source bin/activate
-        $ pip install pcapy hg+http://hg.secdev.org/scapy yolk
+        $ pip install pcapy hg+http://hg.secdev.org/scapy yolk pyx
 
+STARTING THE SCAPY SHELL WITH LISP GOODNESS
 
+    Start the lisp_layer program
+        
+        $ ./lisp_layer.py
+
+EXIT THE ENVIROMENT
+
+        $ deactivate
