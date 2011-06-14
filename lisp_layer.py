@@ -27,15 +27,15 @@ class LISPAddressField(Field):
         self._ip6_field=IP6Field(ip_fld_name, "2001:db8::1")
 
     def getfield(self, pkt, s):
-        if getattr(pkt, self.fld_name) == socket.AF_INET:
+        if getattr(pkt, self.fld_name) == "1":
             return _ip_field.getfield(pkt,s)
-        elif getattr(pkt, self.fld_name) == socket.AF_INET6:
+        elif getattr(pkt, self.fld_name) == "2":
             return _ip6_field.getfield(pkt,s)
     
     def addfield(self, pkt, s, val):
-        if getattr(pkt, self.fld_name) == socket.AF_INET:
+        if getattr(pkt, self.fld_name) == "1":
             return self._ip_field.addfield(pkt, s, val)
-        elif getattr(pkt, self.fld_name) == socket.AF_INET6:
+        elif getattr(pkt, self.fld_name) == "2":
             return self._ip6_field.addfield(pkt, s, val)
 
 class LISPRecordcount(ByteField):
