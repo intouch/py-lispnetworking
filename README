@@ -1,0 +1,14 @@
+
+    py-lispnetworking - A python module to deal with LISP control-plane packets
+
+This software aims to help encode and decode LISP control-plane packets.
+
+It adheres to the following Internet Drafts:
+
+    - http://tools.ietf.org/html/draft-ietf-lisp-12
+    - http://tools.ietf.org/html/draft-farinacci-lisp-lcaf-05
+
+This software is based on scapy.
+
+See the INSTALL file for information how to setup a virtualenv and play with the
+various things that py-lispnetworking can do for you. 
