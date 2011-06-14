@@ -139,9 +139,9 @@ class LISPReply(Packet):
         FlagsField("flags", 0, 3, ["probe", "echo_nonce_alg", "security"]),
         BitField("reserved_fields", 0, 17),
         BitField("recordcount", None, 8),
-        BitField("nonce", None, 64),
+        BitField("nonce", 0, 64),
         BitField("source_eid_afi", 0, 8),
-        BitField("source_eid_address", 0, 32),
+        IPField("source_eid_address", "192.168.53.3"),
     ]
 
 """ assemble a test LISP packet """
