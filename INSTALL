@@ -27,7 +27,7 @@ MACOSX GUIDE:
         $ cd py-lispnetworking
         $ virtualenv-2.6 .
         $ source bin/activate
-        $ pip install pcapy hg+http://hg.secdev.org/scapy yolk pyx
+        $ pip install -r pip-requirements.txt
 
     Now continue with Step 1 below. 
 
@@ -50,7 +50,7 @@ UBUNTU GUIDE:
         $ cd py-lispnetworking
         $ virtualenv .
         $ source bin/activate
-        $ pip install pcapy hg+http://hg.secdev.org/scapy yolk pyx
+        $ pip install -r pip-requirements.txt
 
     Now continue with Step 1 below. 
 
