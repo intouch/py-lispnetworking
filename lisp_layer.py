@@ -4,6 +4,19 @@ from scapy import *
 from scapy.all import *
 import socket,struct
 
+""" 
+    GENERAL DECLARATIONS
+"""
+
+_LISP_TYPES = { 
+    0 : "reserved", 
+    1 : "maprequest", 
+    2 : "mapreply", 
+    3 : "mapregister", 
+    4 : "mapnotify", 
+    8 : "encapsulated_control_message" 
+}
+ 
 """
     LISPAddressField DESCRIPTION
 
@@ -62,9 +75,6 @@ class LISPRecordcount(ByteField):
             x = self._countRC(pkt)
         return x
 
-
-_LISP_TYPES = { 0 : "reserved", 1 : "maprequest", 2 : "mapreply", 3 : "mapregister", 4 : "mapnotify", 8 : "encapsulated_control_message" }
-    
 class LISPType(Packet):
     """ first part of any lisp packet """
     name = "LISP packet type"
