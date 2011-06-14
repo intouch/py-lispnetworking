@@ -126,7 +126,7 @@ class LISPRequest(Packet):
         BitField("reserved_fields", None, 9),
         BitField("itr_rloc_count", 0, 5),
         ByteField("recordcount", 1),
-        BitField("nonce", None, 64),
+        XBitField("nonce", None, 64),
         ByteField("source_eid_afi", 1),
         ByteField("source_eid_address", 1),
         PacketListField("rloc_records",[], LISPSourceRLOC, length_from=lambda pkt:pkt.itr_rloc_count)
@@ -139,7 +139,7 @@ class LISPReply(Packet):
         FlagsField("flags", 0, 3, ["probe", "echo_nonce_alg", "security"]),
         BitField("reserved_fields", 0, 17),
         BitField("recordcount", None, 8),
-        BitField("nonce", 0, 64),
+        XBitField("nonce", 0, 64),
         BitField("source_eid_afi", 0, 8),
         IPField("source_eid_address", "192.168.53.3"),
     ]
