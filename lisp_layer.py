@@ -4,6 +4,27 @@ from scapy import *
 from scapy.all import *
 import socket,struct
 
+""" Will parse an IPField or an IP6Field depending on the value of the AFI field. """
+class LISPAddressField(Field):
+    def __init__(self, fld_name, ip_fld_name):
+        Field.__init__(self, "LISP Address Field", None)
+        
+        self.fld_name=fld_name
+        self._ip_field=IPField(ip_fld_name, "192.168.1.1")
+        self._ip6_field=IP6Field(ip_fld_name, "2001:db8::1")
+
+    def getfield(self, pkt, s):
+        if getattr(pkt, self.fld_name) == socket.AF_INET:
+            return _ip_field.getfield(pkt,s)
+        elif getattr(pkt, self.fld_name) == socket.AF_INET6:
+            return _ip6_field.getfield(pkt,s)
+    
+    def addfield(self, pkt, s, val):
+        if getattr(pkt, self.fld_name) == socket.AF_INET:
+            return self._ip_field.addfield(pkt, s, val)
+        elif getattr(pkt, self.fld_name) == socket.AF_INET6:
+            return self._ip6_field.addfield(pkt, s, val)
+
 class LISPRecordcount(ByteField):
     holds_packets=1
     def __init__(self, name, default, recordcount):
