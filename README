@@ -1,5 +1,17 @@
+INTRODUCTION
 
     py-lispnetworking - A python module to deal with LISP control-plane packets
+
+LISP stands for Locator/Identifier Separation Protocol. It is a protocol which
+is being developed inside the IETF (Internet Engineering TaskFore) and is 
+completely open. 
+
+From www.lisp4.net: 
+
+    "LISP is a network architecture and set of protocols that implements a new
+    semantic for IP addressing. In a nutshell: LISP separates the 'where' and 
+    the 'who' in networking and uses a mapping system to couple the location
+    and identifier."
 
 This software aims to help encode and decode LISP control-plane packets.
 
@@ -7,6 +19,13 @@ It adheres to the following Internet Drafts:
 
     - http://tools.ietf.org/html/draft-ietf-lisp-12
     - http://tools.ietf.org/html/draft-farinacci-lisp-lcaf-05
+
+For more information about LISP please visit the following websites:
+
+    - http://www.lisp4.net/
+    - http://lisp.cisco.com/
+    - http://en.wikipedia.org/wiki/Locator/Identifier_Separation_Protocol
+    - http://datatracker.ietf.org/wg/lisp/charter/
 
 This software is based on scapy.
 
