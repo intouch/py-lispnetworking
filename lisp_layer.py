@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/env python
 import scapy
 from scapy import *
 from scapy.all import *
@@ -16,7 +16,20 @@ _LISP_TYPES = {
     4 : "mapnotify", 
     8 : "encapsulated_control_message" 
 }
- 
+
+_AFI = {
+    """ An AFI value of 0 used in this specification indicates an unspecified
+    encoded address where the length of the address is 0 bytes
+    following the 16-bit AFI value of 0."""
+
+    "unspecified" : 0,
+
+    """ see http://www.iana.org/assignments/address-family-numbers/address-family-numbers.xml """
+    "ipv4" : 1,
+    "ipv6" : 2,
+    "lcaf" : 16387 
+}
+
 """
     LISPAddressField DESCRIPTION
 
@@ -40,15 +53,15 @@ class LISPAddressField(Field):
         self._ip6_field=IP6Field(ip_fld_name, "2001:db8::1")
 
     def getfield(self, pkt, s):
-        if getattr(pkt, self.fld_name) == "1":
+        if getattr(pkt, self.fld_name) == _AFI["ipv4"]:
             return _ip_field.getfield(pkt,s)
-        elif getattr(pkt, self.fld_name) == "2":
+        elif getattr(pkt, self.fld_name) == _AFI["ipv6"]:
             return _ip6_field.getfield(pkt,s)
     
     def addfield(self, pkt, s, val):
-        if getattr(pkt, self.fld_name) == "1":
+        if getattr(pkt, self.fld_name) == _AFI["ipv4"]:
             return self._ip_field.addfield(pkt, s, val)
-        elif getattr(pkt, self.fld_name) == "2":
+        elif getattr(pkt, self.fld_name) == _AFI["ipv6"]: 
             return self._ip6_field.addfield(pkt, s, val)
 
 class LISPRecordcount(ByteField):

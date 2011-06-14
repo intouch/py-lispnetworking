@@ -1,0 +1,69 @@
+LISP Networking module
+
+To use this library you should install the following:
+
+    - python 2.6
+    - virtualenv 2.6
+    - scapy 2.2.0-dev
+   
+MACOSX GUIDE:
+
+    Install macports from http://www.macports.org/ 
+
+    Install git-core and mercurial
+        
+        $ sudo port install git-core mercurial
+    
+    Clone the repo into the project directory
+
+        $ git clone https://github.com/intouch/py-lispnetworking.git
+
+    Install virtualenv and friends
+
+        $ sudo port install python26 py26-virtualenv libdnet py26-libdnet
+
+    Setup virtualenv
+
+        $ cd py-lispnetworking
+        $ virtualenv-2.6 .
+        $ source bin/activate
+        $ pip install -r pip-requirements.txt
+
+    Now continue with Step 1 below. 
+
+UBUNTU GUIDE:
+
+    Setup virtualenv and python
+
+        $ sudo apt-get install libxslt1-dev libxml2-dev python-virtualenv python-pip python-dev python2.6
+
+    Install git-core mercurial, libpcap0.8, libpcap0.8-dev
+
+        $ sudo apt-get install git-core mercurial libpcap0.8 libpcap0.8-dev
+
+    Clone repo from github.com
+
+        $ git clone https://github.com/intouch/py-lispnetworking.git
+
+    Enter project directory and setup virtualenv
+
+        $ cd py-lispnetworking
+        $ virtualenv .
+        $ source bin/activate
+        $ pip install -r pip-requirements.txt
+
+    Now continue with Step 1 below. 
+
+
+Step 1: STARTING THE SCAPY SHELL WITH LISP GOODNESS
+
+    Start the lisp_layer program
+        
+        $ ./lisp_layer.py
+
+Step 2: EXIT THE ENVIROMENT
+
+        $ deactivate
+
+
+

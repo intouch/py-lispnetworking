@@ -1,0 +1,6 @@
+PyX==0.10
+dnet==1.12
+pcapy==0.10.5
+pylibpcap==0.6.2
+-e hg+http://hg.secdev.org/scapy#egg=scapy
+yolk==0.4.1
