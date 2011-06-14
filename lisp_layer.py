@@ -79,7 +79,7 @@ class LISPType(Packet):
 """RECORD FIELDS, PART OF THE REPLY, REQUEST, NOTIFY OR REGISTER PACKET CLASSES"""
 
 class LISPSourceRLOC(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
-    name = "reply record containing the source eid address"
+    name = "ITR RLOC Address"
     fields_desc = [
         ByteField("eid_src_afi", 2),                                                        # read out the AFI
         ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
@@ -140,10 +140,10 @@ class LISPMapRequest(Packet):
         BitField("reserved_fields", None, 9),
         BitField("itr_rloc_count", 0, 5),
         ByteField("recordcount", 1),
-        XBitField("nonce", None, 64),
+        XBitField("nonce", None, 72),
         ByteField("source_eid_afi", 1),
-        ByteField("source_eid_address", 1),
-        PacketListField("rloc_records",[], LISPSourceRLOC, length_from=lambda pkt:pkt.itr_rloc_count)
+        IPField("source_eid_address", "10.0.0.1"),
+        PacketListField("rloc_records",[], LISPSourceRLOC, length_from=lambda pkt:pkt.itr_rloc_count + 1)
     ]
 
 class LISPMapReply(Packet):                                                    
