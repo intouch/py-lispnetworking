@@ -16,7 +16,18 @@ _LISP_TYPES = {
     4 : "mapnotify", 
     8 : "encapsulated_control_message" 
 }
- 
+
+_AFI = {
+    """ An AFI value of 0 used in this specification indicates an unspecified
+    encoded address where the length of the address is 0 bytes
+    following the 16-bit AFI value of 0."""
+    0 : "unspecified",
+    """ see http://www.iana.org/assignments/address-family-numbers/address-family-numbers.xml """
+    1 : "ipv4",
+    2 : "ipv6",
+    16387 : "lcaf"
+}
+
 """
     LISPAddressField DESCRIPTION
 
