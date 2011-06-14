@@ -4,7 +4,21 @@ from scapy import *
 from scapy.all import *
 import socket,struct
 
-""" Will parse an IPField or an IP6Field depending on the value of the AFI field. """
+"""
+    LISPAddressField DESCRIPTION
+
+    Dealing with addresses in LISP context, the packets often contain (afi, address)
+    where the afi decides the length of the address (0, 32 or 128 bit)
+
+    LISPAddressField will parse an IPField or an IP6Field depending on the value of 
+    the AFI field. 
+    
+    An example would be: 
+       ByteField("record_afi", 2),
+       LISPAddressField("record_afi", "record_address"),
+
+
+"""
 class LISPAddressField(Field):
     def __init__(self, fld_name, ip_fld_name):
         Field.__init__(self, "LISP Address Field", None)
