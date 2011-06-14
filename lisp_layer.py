@@ -4,33 +4,31 @@ from scapy import *
 from scapy.all import *
 import socket,struct
 
-""" Will parse an IPField or an IP6Field depending on the value of the AFI field. """
-class LISPAddressField(Field):
-    def __init__(self, fld_name, ip_fld_name):
-        Field.__init__(self, "LISP Address Field", None)
-        
-        self.fld_name=fld_name
-        self._ip_field=IPField(ip_fld_name, "192.168.1.1")
-        self._ip6_field=IP6Field(ip_fld_name, "2001:db8::1")
+class LISPrecordcount(ShortField):
+    holds_packets=1
+    def __init__(self, name, default, recordcount):
+        ShortField.__init__(self, name, default)
+        self.recordcount = recordcount
+    def _countRC(self, pkt):
+        x = getattr(pkt,self.recordcount)
+        i = 0
+        while isinstance(x, LISPSourceEID): # or isinstance(x, DNSQR):
+            x = x.payload
+            i += 1
+            return i
 
-    def getfield(self, pkt, s):
-        if getattr(pkt, self.fld_name) == socket.AF_INET:
-            return _ip_field.getfield(pkt,s)
-        elif getattr(pkt, self.fld_name) == socket.AF_INET6:
-            return _ip6_field.getfield(pkt,s)
-    
-    def addfield(self, pkt, s, val):
-        if getattr(pkt, self.fld_name) == socket.AF_INET:
-            return self._ip_field.addfield(pkt, s, val)
-        elif getattr(pkt, self.fld_name) == socket.AF_INET6:
-            return self._ip6_field.addfield(pkt, s, val)
+    def i2m(self, pkt, x):
+        if x is None:
+            x = self._countRC(pkt)
+        return x
+  
+    def i2h(self, pkt, x):
+        if x is None:
+            x = self._countRC(pkt)
+        return x
 
-_LISP_TYPES = { 0 : "reserved",
-                1 : "maprequest",
-                2 : "mapreply",
-                3 : "mapregister",
-                4 : "mapnotify",
-                8 : "encapsulated_control_message" }
+
+_LISP_TYPES = { 0 : "reserved", 1 : "maprequest", 2 : "mapreply", 3 : "mapregister", 4 : "mapnotify", 8 : "encapsulated_control_message" }
     
 class LISPType(Packet):
     """ first part of any lisp packet """
@@ -50,7 +48,7 @@ class LISPRequest(Packet):
         ByteField("nonce", 8)
     ]
 
-class LISPReply(Packet):                                                    #TODO check allignment
+class LISPReply(Packet):                                                    
     """ request part after the first 4 bits of a LISP message """
     name = "LISP reply packet"
     fields_desc = [
