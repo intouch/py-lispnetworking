@@ -17,7 +17,6 @@ import socket,struct
        ByteField("record_afi", 2),
        LISPAddressField("record_afi", "record_address"),
 
-
 """
 class LISPAddressField(Field):
     def __init__(self, fld_name, ip_fld_name):
