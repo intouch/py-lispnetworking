@@ -95,13 +95,36 @@ class LISPSourceEID(Packet):                                                    
     ]
 
 class LISPRecord(Packet):
-    name = "Map Request Record"
+    name = "Mapping Record"
     fields_desc = [
+<<<<<<< HEAD
         XBitField("reserved_fields", None, 8),                                                    #padding
         BitField("eid_prefix_length", None, 8),
         BitField("record_afi", None, 16),
         ConditionalField(IPField("v4_eids", '10.0.0.1'), lambda pkt:pkt.record_afi==1),     # read out of the v4 AFI, this field is 1 by default
         ConditionalField(IP6Field("v6_eids", '2001::1'), lambda pkt:pkt.record_afi==10)     # TODO read out of the v6 AFI, not sure about AFI nr. 
+=======
+        BitField("record_ttl", 0, 32),
+        ByteField("locator_count", 0),
+        ByteField("eid_mask_length", 0),
+# next field should be an enumeration i think 
+        BitField("ACT", 0, 3),
+        BitField("A", 0, 1),
+        BitField("reserved", 0, 16),
+        BitField("map_version_number", 0, 12),
+        ShortField("eid_prefix_afi", 0),
+        IPField("eid_prefix", "2.2.2.2"),
+#        ConditionalField(IPField("v4_eids", '10.0.0.1'), lambda pkt:pkt.record_afi==1),     # read out of the v4 AFI, this field is 1 by default
+#        ConditionalField(IP6Field("v6_eids", '2001::1'), lambda pkt:pkt.record_afi==2)     # TODO read out of the v6 AFI, not sure about AFI nr. 
+        ByteField("priority", 0),
+        ByteField("weight", 0),
+        ByteField("multicast_priority", 0),
+        ByteField("multicast_weight", 0),
+        BitField("reserved", 0, 13),
+        FlagsField("flags", 0, 3, ["L", "p", "R"]),
+        ShortField("locator_afi", 0),
+        IPField("locator_address", "1.1.1.1"),
+>>>>>>> c767a51a2d4e3569760e6e7016d7a1460ba228b9
     ]
 
 class LISPMapReplyRLOC(Packet):
@@ -109,8 +132,8 @@ class LISPMapReplyRLOC(Packet):
     fields_desc = [
         ByteField("priority", 1),                                               # unicast traffic priority
         ByteField("weight", 1),                                                 # unicast traffic weight
-        ByteField("m_priority", 1),                                             # multicast traffic priority
-        ByteField("m_weight", 1),                                               # multicast traffic weight
+        ByteField("multicast_priority", 1),                                     # multicast traffic priority
+        ByteField("multicast_weight", 1),                                       # multicast traffic weight
         BitField("unused_flags", "0"*13, 13),                                   # field reserved for unused flags
         FlagsField("flags", None, 3, ["local_locator", "probe", "route"]),      # flag fields -  "L", "p", "R"  
         ByteField("rloc_add", 4)                                                # the actual RLOC address
@@ -140,12 +163,17 @@ class LISPMapReply(Packet):
         FlagsField("flags", 0, 4, ["probe", "echo_nonce_alg", "security"]),
         ShortField("reserved_fields", 0),
         ByteField("recordcount", 0),
+<<<<<<< HEAD
         XBitField("nonce", None, 72),
         ByteField("source_eid_afi", 0),
         XLongField("nonce", 0),
 # tot ^^ klopt
         XByteField("source_eid_afi", 0),
         IPField("source_eid_address", "192.168.53.3"),
+=======
+        XLongField("nonce", 0),
+        LISPRecord,
+>>>>>>> c767a51a2d4e3569760e6e7016d7a1460ba228b9
     ]
 
 """ assemble a test LISP packet """
