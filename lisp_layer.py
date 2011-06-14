@@ -100,6 +100,7 @@ class LISPRecord(Packet):
         BitField("record_ttl", 0, 32),
         ByteField("locator_count", 0),
         ByteField("eid_mask_length", 0),
+# next field should be an enumeration i think 
         BitField("ACT", 0, 3),
         BitField("A", 0, 1),
         BitField("reserved", 0, 16),
