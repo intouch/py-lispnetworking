@@ -136,11 +136,11 @@ class LISPReply(Packet):
     """ request part after the first 4 bits of a LISP message """
     name = "LISP reply packet"
     fields_desc = [
-        FlagsField("flags", 0, 3, ["probe", "echo_nonce_alg", "security"]),
-        BitField("reserved_fields", 0, 17),
-        BitField("recordcount", None, 8),
+        FlagsField("flags", 0, 4, ["probe", "echo_nonce_alg", "security"]),
+        ShortField("reserved_fields", 0),
+        ByteField("recordcount", 0),
         XBitField("nonce", 0, 64),
-        BitField("source_eid_afi", 0, 8),
+        ByteField("source_eid_afi", 0),
         IPField("source_eid_address", "192.168.53.3"),
     ]
 
