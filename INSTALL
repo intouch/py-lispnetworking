@@ -3,13 +3,42 @@ LISP Networking module
 To use this library you should install the following:
 
     - python 2.6
-    - virtualenv
-    - scapy
+    - virtualenv 2.6
+    - scapy 2.2.0-dev
    
 MacOSX Guide:
-    - install macports
-        http://www.macports.org/
-    $ sudo port install python26
-    $ sudo port install py26-virtualenv
-    $ hg clone http://hg.secdev.org/scapy local-scapy
+
+- install macports ( obtain the software here http://www.macports.org/ )
+    $ git clone https://job@github.com/intouch/py-lispnetworking.git
+    $ cd py-lispnetworking
+    $ sudo port install python26 py26-virtualenv libdnet py26-libdnet
+    $ virtualenv-2.6 .
+    $ source bin/activate
+    $ pip install pcapy hg+http://hg.secdev.org/scapy yolk
+
+eventueel: pip install libpcap
+
+
+
+Ubuntu Guide:
+
+    Setup virtualenv and python
+
+        $ sudo apt-get install libxslt1-dev libxml2-dev python-virtualenv python-pip python-dev python2.6
+
+    Install git-core
+
+        $ sudo apt-get install git-core
+
+    Clone repo from github.com
+
+        $ git clone https://job@github.com/intouch/py-lispnetworking.git
+
+    Enter project directory and setup virtualenv
+
+        $ cd py-lispnetworking
+        $ virtualenv-2.6 .
+        $ source bin/activate
+        $ pip install pcapy hg+http://hg.secdev.org/scapy yolk
+
 
