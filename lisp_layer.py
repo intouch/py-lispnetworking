@@ -31,6 +31,9 @@ _AFI = {
 }
 
 """
+
+FIELDS
+
     LISPAddressField DESCRIPTION
 
     Dealing with addresses in LISP context, the packets often contain (afi, address)
@@ -64,29 +67,7 @@ class LISPAddressField(Field):
         elif getattr(pkt, self.fld_name) == _AFI["ipv6"]: 
             return self._ip6_field.addfield(pkt, s, val)
 
-class LISPRecordcount(ByteField):
-    holds_packets=1
-    def __init__(self, name, default, recordcount):
-        ByteField.__init__(self, name, default)
-        self.recordcount = recordcount
-
-    def _countRC(self, pkt):
-        x = getattr(pkt,self.recordcount)
-        i = 0
-        while isinstance(x, LISPSourceRLOC): # or isinstance(x, DNSQR):
-            x = x.payload
-            i += 1
-        return i
-
-    def i2m(self, pkt, x):
-        if x is None:
-            x = self._countRC(pkt)
-        return x
-  
-    def i2h(self, pkt, x):
-        if x is None:
-            x = self._countRC(pkt)
-        return x
+"""CLASS TO DETERMINE WHICH PACKET TYPE TO INTERPRET"""
 
 class LISPType(Packet):
     """ first part of any lisp packet """
@@ -94,6 +75,8 @@ class LISPType(Packet):
     fields_desc = [
         BitEnumField("packettype", None, 4, _LISP_TYPES),
     ]
+
+"""RECORD FIELDS, PART OF THE REPLY, REQUEST, NOTIFY OR REGISTER PACKET CLASSES"""
 
 class LISPSourceRLOC(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
     name = "reply record containing the source eid address"
@@ -103,6 +86,37 @@ class LISPSourceRLOC(Packet):                                                   
         ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==10)     # TODO read out of the v6 AFI, not sure about AFI number yet 
          ]
 
+class LISPSourceEID(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
+    name = "reply record containing the source eid address"
+    fields_desc = [
+        ByteField("eid_src_afi", 2),                                                        # read out the AFI
+        ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
+        ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==10)     # TODO read out of the v6 AFI, not sure about AFI number yet 
+    ]
+
+class LISPRecord(Packet):
+    name = "Map Request Record"
+    fields_desc = [
+        ByteField("reserved_fields", 1),                                                    #padding
+        ByteField("eid_prefix_length", 1),
+        ByteField("record_afi", 2),
+        ConditionalField(IPField("v4_eids", '10.0.0.1'), lambda pkt:pkt.record_afi==1),     # read out of the v4 AFI, this field is 1 by default
+        ConditionalField(IP6Field("v6_eids", '2001::1'), lambda pkt:pkt.record_afi==10)     # TODO read out of the v6 AFI, not sure about AFI nr. 
+    ]
+
+class LISPReplyRLOC(Packet):
+    name = "Map Reply RLOC record, N times determined by the record count field"
+    fields_desc = [
+        ByteField("priority", 1),                                               # unicast traffic priority
+        ByteField("weight", 1),                                                 # unicast traffic weight
+        ByteField("m_priority", 1),                                             # multicast traffic priority
+        ByteField("m_weight", 1),                                               # multicast traffic weight
+        BitField("unused_flags", "0"*13, 13),                                   # field reserved for unused flags
+        FlagsField("flags", None, 3, ["local_locator", "probe", "route"]),      # flag fields -  "L", "p", "R"  
+        ByteField("rloc_add", 4)                                                # the actual RLOC address
+    ]
+
+"""PACKET TYPES (REPLY, REQUEST, NOTIFY OR REGISTER"""
 
 class LISPRequest(Packet):
     """ request part after the first 4 bits of a LISP message """
@@ -130,46 +144,7 @@ class LISPReply(Packet):
         ByteField("source_eid_address", 1),
     ]
 
-class LISPSourceEID(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
-    name = "reply record containing the source eid address"
-    fields_desc = [
-        ByteField("eid_src_afi", 2),                                                        # read out the AFI
-        ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
-        ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==10)     # TODO read out of the v6 AFI, not sure about AFI number yet 
-    ]
-
-class LISPRecord(Packet):
-    name = "Map Request Record"
-    fields_desc = [
-        ByteField("reserved_fields", 1),                                                    #padding
-        ByteField("eid_prefix_length", 1),
-        ByteField("record_afi", 2),
-        ConditionalField(IPField("v4_eids", '10.0.0.1'), lambda pkt:pkt.record_afi==1),     # read out of the v4 AFI, this field is 1 by default
-        ConditionalField(IP6Field("v6_eids", '2001::1'), lambda pkt:pkt.record_afi==10)     # TODO read out of the v6 AFI, not sure about AFI nr. 
-    ]
-
-
-class LISPMapReply(Packet):
-    name = "Map Reply Records, n times determined by the 'record_count' from the header" 
-    fields_desc = [
-        ByteField("record_ttl", 4),         # ttl
-        ByteField("locator_count", 1),      # amount of locator records in the packet, see LISPReplyRLOC    
-        ByteField("eid_mask_length", 1)     # mask length of the EID-space
-    ]
-
-class LISPReplyRLOC(Packet):
-    name = "Map Reply RLOC record, n times determined by the record count field"
-    fields_desc = [
-        ByteField("priority", 1),                                               # unicast traffic priority
-        ByteField("weight", 1),                                                 # unicast traffic weight
-        ByteField("m_priority", 1),                                             # multicast traffic priority
-        ByteField("m_weight", 1),                                               # multicast traffic weight
-        BitField("unused_flags", "0"*13, 13),                                   # field reserved for unused flags
-        FlagsField("flags", None, 3, ["local_locator", "probe", "route"]),      # flag fields -  "L", "p", "R"  
-        ByteField("rloc_add", 4)                                                # the actual RLOC address
-    ]
-
-#assemble lisp packet
+""" assemble a test LISP packet """
 def createLispMessage():
     return IP()/UDP(sport=4342,dport=4342)/LISPType()/LISPRequest()/LISPSourceRLOC()
 
