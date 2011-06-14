@@ -1,5 +1,4 @@
 PyX
-dnet
 pcapy
 -e hg+http://hg.secdev.org/scapy#egg=scapy
 yolk
