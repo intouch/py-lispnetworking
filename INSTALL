@@ -1,0 +1,15 @@
+LISP Networking module
+
+To use this library you should install the following:
+
+    - python 2.6
+    - virtualenv
+    - scapy
+   
+MacOSX Guide:
+    - install macports
+        http://www.macports.org/
+    $ sudo port install python26
+    $ sudo port install py26-virtualenv
+    $ hg clone http://hg.secdev.org/scapy local-scapy
+
