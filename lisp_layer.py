@@ -104,7 +104,7 @@ class LISPRecord(Packet):
         ConditionalField(IP6Field("v6_eids", '2001::1'), lambda pkt:pkt.record_afi==10)     # TODO read out of the v6 AFI, not sure about AFI nr. 
     ]
 
-class LISPReplyRLOC(Packet):
+class LISPMapReplyRLOC(Packet):
     name = "Map Reply RLOC record, N times determined by the record count field"
     fields_desc = [
         ByteField("priority", 1),                                               # unicast traffic priority
@@ -132,15 +132,17 @@ class LISPRequest(Packet):
         PacketListField("rloc_records",[], LISPSourceRLOC, length_from=lambda pkt:pkt.itr_rloc_count)
     ]
 
-class LISPReply(Packet):                                                    
+class LISPMapReply(Packet):                                                    
     """ request part after the first 4 bits of a LISP message """
     name = "LISP reply packet"
     fields_desc = [
         FlagsField("flags", 0, 4, ["probe", "echo_nonce_alg", "security"]),
         ShortField("reserved_fields", 0),
         ByteField("recordcount", 0),
-        XBitField("nonce", 0, 64),
-        ByteField("source_eid_afi", 0),
+        XLongField("nonce", 0),
+
+# tot ^^ klopt
+        XByteField("source_eid_afi", 0),
         IPField("source_eid_address", "192.168.53.3"),
     ]
 
@@ -163,8 +165,8 @@ lisp-control    4342/udp   LISP Data-Triggered Control
 
 bind_layers( UDP, LISPType, dport=4342)
 bind_layers( UDP, LISPType, sport=4342)
-bind_layers( LISPType, LISPRequest, packettype=1)
-bind_layers( LISPType, LISPReply, packettype=2)
+bind_layers( LISPType, LISPMapRequest, packettype=1)
+bind_layers( LISPType, LISPMapReply, packettype=2)
 #bind_layers( LISPRequest, LISPSourceEID )
 
 """ start scapy shell """
