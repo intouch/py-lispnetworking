@@ -50,7 +50,7 @@ class LISPRequest(Packet):
 		ByteField("nonce", 8)
 			]
 
-class LISPReply(Packet):												#TODO check allignment
+class LISPReply(Packet):												
         """ request part after the first 4 bits of a LISP message """
 	name = "LISP reply packet"
 	fields_desc = [
@@ -90,20 +90,20 @@ class LISPRecord(Packet):
 class LISPMapReply(Packet):
     name = "Map Reply Records, n times determined by the 'record_count' from the header" 
     fields_desc = [
-	ByteField("record_ttl", 4),	    # ttl
-	ByteField("locator_count", 1),      # amount of locator records in the packet, see LISPReplyRLOC    
-	ByteField("eid_mask_length", 1)     # mask length of the EID-space
+	ByteField("record_ttl", 4),	    										# ttl
+	ByteField("locator_count", 1),      										# amount of locator records in the packet, see LISPReplyRLOC    
+	ByteField("eid_mask_length", 1)     										# mask length of the EID-space
 		]
 class LISPReplyRLOC(Packet):
     name = "Map Reply RLOC record, n times determined by the record count field"
     fields_desc = [
-	ByteField("priority", 1),           # unicast traffic priority
-	ByteField("weight", 1),             # unicast traffic weight
-	ByteField("m_priority", 1),         # multicast traffic priority
-	ByteField("m_weight", 1),           # multicast traffic weight
-	BitField("unused_flags", "0"*13, 13), 					   # field reserved for unused flags
-	FlagsField("flags", None, 3, ["local_locator", "probe", "route"]),         # flag fields -  "L", "p", "R"  
-	ByteField("rloc_add", 4)            # the actual RLOC address
+	ByteField("priority", 1),          										# unicast traffic priority
+	ByteField("weight", 1),             										# unicast traffic weight
+	ByteField("m_priority", 1),         										# multicast traffic priority
+	ByteField("m_weight", 1),           										# multicast traffic weight
+	BitField("unused_flags", "0"*13, 13), 					   					# field reserved for unused flags
+	FlagsField("flags", None, 3, ["local_locator", "probe", "route"]),        					# flag fields -  "L", "p", "R"  
+	ByteField("rloc_add", 4)            										# the actual RLOC address
 		]
 
 #assemble lisp packet
