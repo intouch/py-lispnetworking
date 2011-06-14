@@ -118,7 +118,7 @@ class LISPMapReplyRLOC(Packet):
 
 """PACKET TYPES (REPLY, REQUEST, NOTIFY OR REGISTER"""
 
-class LISPRequest(Packet):
+class LISPMapRequest(Packet):
     """ request part after the first 4 bits of a LISP message """
     name = "LISP request packet"
     fields_desc = [
