@@ -4,18 +4,19 @@ from scapy import *
 from scapy.all import *
 import socket,struct
 
-class LISPrecordcount(ShortField):
+class LISPRecordcount(ByteField):
     holds_packets=1
     def __init__(self, name, default, recordcount):
-        ShortField.__init__(self, name, default)
+        ByteField.__init__(self, name, default)
         self.recordcount = recordcount
+
     def _countRC(self, pkt):
         x = getattr(pkt,self.recordcount)
         i = 0
-        while isinstance(x, LISPSourceEID): # or isinstance(x, DNSQR):
+        while isinstance(x, LISPSourceRLOC): # or isinstance(x, DNSQR):
             x = x.payload
             i += 1
-            return i
+        return i
 
     def i2m(self, pkt, x):
         if x is None:
@@ -44,7 +45,7 @@ class LISPRequest(Packet):
         FlagsField("flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
         BitField("reserved_fields", None, 9),
         BitField("itr_rloc_count", 0, 5),
-        ByteField("record_count", 1),
+        ByteField("recordcount", 1),
         ByteField("nonce", 8)
     ]
 
@@ -54,7 +55,7 @@ class LISPReply(Packet):
     fields_desc = [
         FlagsField("flags", 0, 3, ["probe", "echo_nonce_alg", "security"]),
         BitField("reserved_fields", None, 17),
-        ByteField("recordcount", 1),
+        LISPRecordcount("recordcount", 0, "rc"),
         ByteField("nonce", 8)
     ]
 
@@ -107,7 +108,7 @@ class LISPReplyRLOC(Packet):
 
 #assemble lisp packet
 def createLispMessage():
-    return IP()/UDP(sport=4342,dport=4342)/LISPHeader(f3=1,f4=1)/LISPsourceEID(eid_src_afi=1)/LISPsourceRLOC(rloc_src_afi=1)/LISPrecord(record_afi=1,reserved_fields=0,eid_prefix_length=1)
+    return IP()/UDP(sport=4342,dport=4342)/LISPType()/LISPRequest()/LISPSourceRLOC()
 
 """
 Bind LISP into scapy stack
@@ -125,12 +126,9 @@ bind_layers( UDP, LISPType, dport=4342)
 bind_layers( UDP, LISPType, sport=4342)
 bind_layers( LISPType, LISPRequest, packettype=1)
 bind_layers( LISPType, LISPReply, packettype=2)
-#bind_layers( LISPHeader, LISPMapRegister, type=3)          #TODO
-#bind_layers( LISPHeader, LISPMapNotify, type=4)            #TODO
-#bind_layers( LISPHeader, LISPEncapsulatedControlMessage, type=8)   #TODO
+bind_layers( LISPRequest, LISPSourceEID )
 
 """ start scapy shell """
-
 #debug mode
 if __name__ == "__main__":
     interact(mydict=globals(), mybanner="lisp debug")
