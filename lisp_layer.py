@@ -137,11 +137,11 @@ class LISPReply(Packet):
     name = "LISP reply packet"
     fields_desc = [
         FlagsField("flags", 0, 3, ["probe", "echo_nonce_alg", "security"]),
-        BitField("reserved_fields", None, 17),
-        ByteField("recordcount", 0),
+        BitField("reserved_fields", 0, 17),
+        BitField("recordcount", None, 8),
         BitField("nonce", None, 64),
-        ByteField("source_eid_afi", 1),
-        ByteField("source_eid_address", 1),
+        BitField("source_eid_afi", 0, 8),
+        BitField("source_eid_address", 0, 32),
     ]
 
 """ assemble a test LISP packet """
