@@ -20,7 +20,7 @@ MACOSX GUIDE:
 
     Install virtualenv and friends
 
-        $ sudo port install python26 py26-virtualenv libdnet py26-libdnet
+        $ sudo port install python26 py26-virtualenv libdnet py26-libdnet py26-pylibpcap
 
     Setup virtualenv
 
