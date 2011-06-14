@@ -31,8 +31,7 @@ _AFI = {
 }
 
 """
-
-FIELDS
+    FIELDS
 
     LISPAddressField DESCRIPTION
 
@@ -47,6 +46,7 @@ FIELDS
        LISPAddressField("record_afi", "record_address"),
 
 """
+
 class LISPAddressField(Field):
     def __init__(self, fld_name, ip_fld_name):
         Field.__init__(self, "LISP Address Field", None)
