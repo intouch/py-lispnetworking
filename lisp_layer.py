@@ -83,7 +83,7 @@ class LISPSourceRLOC(Packet):                                                   
     fields_desc = [
         ShortField("eid_src_afi", 0),                                                        # read out the AFI
         ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
-        ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==10)     # TODO read out of the v6 AFI, not sure about AFI number yet 
+        ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==2)     # TODO read out of the v6 AFI, not sure about AFI number yet 
     ]
 
 class LISPSourceEID(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
@@ -94,7 +94,7 @@ class LISPSourceEID(Packet):                                                    
         ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==10)     # TODO read out of the v6 AFI, not sure about AFI number yet 
     ]
 
-class LISPRecord(Packet):
+class LISPReplyRecord(Packet):
     name = "Mapping Record"
     fields_desc = [
         BitField("record_ttl", 0, 32),
@@ -119,6 +119,15 @@ class LISPRecord(Packet):
         IPField("locator_address", "1.1.1.1"),
     ]
 
+class LISPMapRequestRecord(Packet):
+    name= "Map Request Record"
+    fields_desc = [
+        ByteField("reserved", 0),
+        ByteField("eid_mask_len", 0),
+        ShortField("eid_prefix_afi", 0),
+        IPField("eid_prefix", "1.1.1.1")
+    ]
+
 class LISPMapReplyRLOC(Packet):
     name = "Map Reply RLOC record, N times determined by the record count field"
     fields_desc = [
@@ -140,12 +149,13 @@ class LISPMapRequest(Packet):
         FlagsField("flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
         BitField("reserved_fields", None, 9),
         BitField("itr_rloc_count", 0, 5),
-        ByteField("recordcount", 1),
-        XBitField("nonce", None, 72),
-        ByteField("source_eid_afi", 1),
+        FieldLenField("recordcount", 0, fmt='B', count_of="eid_records"),
+        XLongField("nonce", 0),
+        ShortField("source_eid_afi", 0),
         IPField("source_eid_address", "10.0.0.1"),
-        PacketListField("rloc_records", None, LISPSourceRLOC, count_from=lambda pkt:pkt.itr_rloc_count + 1),
-        PacketListField("eid_records", None, LISPRecord, count_from=lambda pkt:pkt.recordcount + 1)
+        LISPSourceRLOC,
+#        PacketListField("rloc_records", None, LISPSourceRLOC, count_from=lambda pkt:pkt.itr_rloc_count),
+        PacketListField("eid_records", None, LISPMapRequestRecord, count_from=lambda pkt:pkt.recordcount)
     ]
 
 class LISPMapReply(Packet):                                                    
@@ -156,7 +166,7 @@ class LISPMapReply(Packet):
         ShortField("reserved_fields", 0),
         ByteField("recordcount", 0),
         XLongField("nonce", 0),
-        LISPRecord,
+        LISPReplyRecord,
     ]
 
 """ assemble a test LISP packet """
