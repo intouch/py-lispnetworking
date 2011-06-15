@@ -74,6 +74,13 @@ class LISPType(Packet):
     name = "LISP packet type"
     fields_desc = [
         BitEnumField("packettype", None, 4, _LISP_TYPES),
+        # MapRequest
+        ConditionalField(FlagsField("flags", 0, 12, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]), lambda pkt:pkt.packettype==1), 
+        # MapReply
+        ConditionalField(FlagsField("flags", 0, 12, ["probe", "echo_nonce_alg", "security"]), lambda pkt:pkt.packettype==2), 
+        ConditionalField(FlagsField("flags", 0, 12, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]), lambda pkt:pkt.packettype==3), 
+        ConditionalField(FlagsField("flags", 0, 12, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]), lambda pkt:pkt.packettype==4), 
+        ConditionalField(FlagsField("flags", 0, 12, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]), lambda pkt:pkt.packettype==8), 
     ]
 
 """RECORD FIELDS, PART OF THE REPLY, REQUEST, NOTIFY OR REGISTER PACKET CLASSES"""
@@ -146,9 +153,10 @@ class LISPMapRequest(Packet):
     """ request part after the first 4 bits of a LISP message """
     name = "LISP request packet"
     fields_desc = [
-        FlagsField("flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
+        # this is now handeled in LispHeader
+        # FlagsField("flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
         # we snoop a bit from the reserved field so we dont have to figure out bit alignment right now 
-        BitField("reserved_fields", None, 6),
+        # BitField("reserved_fields", None, 6),
         FieldLenField("itr_rloc_count", 0, fmt='B', count_of="rloc_records"),
         FieldLenField("recordcount", 0, fmt='B', count_of="eid_records"),
         XLongField("nonce", 0),
@@ -163,8 +171,9 @@ class LISPMapReply(Packet):
     """ request part after the first 4 bits of a LISP message """
     name = "LISP reply packet"
     fields_desc = [
-        FlagsField("flags", 0, 4, ["probe", "echo_nonce_alg", "security"]),
-        ShortField("reserved_fields", 0),
+        # now handled in LISPHeader
+        # FlagsField("flags", 0, 4, ["probe", "echo_nonce_alg", "security"]),
+        ByteField("reserved_fields", 0),
         ByteField("recordcount", 0),
         XLongField("nonce", 0),
         LISPReplyRecord
