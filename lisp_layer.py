@@ -31,7 +31,7 @@ _AFI = {
     http://www.iana.org/assignments/address-family-numbers/address-family-numbers.xml 
     """
 
-    "unspecified" : 0,
+    "notpresent" : 0,
     "ipv4" : 1,
     "ipv6" : 2,
     "lcaf" : 16387 
@@ -95,10 +95,6 @@ class LISP_AddressField(Field):
         elif getattr(pkt, self.fld_name) == _AFI["ipv6"]: 
             return self._ip6_field.addfield(pkt, s, val)
 
-def extract_padding(self, s):
-        return "", s
-
-
 """RECORD FIELDS, PART OF THE REPLY, REQUEST, NOTIFY OR REGISTER PACKET CLASSES"""
 
 class LISP_AFI_Address(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
@@ -106,12 +102,9 @@ class LISP_AFI_Address(Packet):                                                 
     fields_desc = [
         ShortField("afi", 0),                                                        # read out the AFI
         LISP_AddressField("afi", "address"),
-        #ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
-        #ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==2)     # TODO read out of the v6 AFI, not sure about AFI number yet 
     ]
     def extract_padding(self, s):
         return "", s
-
 
 class LISP_Locator_Record(Packet):
     name = "LISP Locator Records"
@@ -151,8 +144,11 @@ class LISP_MapRequestRecord(Packet):
         ByteField("reserved", 0),
         ByteField("eid_mask_len", 0),
         ShortField("eid_prefix_afi", 0),
-        IPField("eid_prefix", "1.1.1.1")
+        LISP_AddressField("eid_prefix_afi", "eid_prefix")
     ]
+    
+    def extract_padding(self, s):
+        return "", s
 
 class LISP_MapReplyRLOC(Packet):
     name = "LISP Map-Reply RLOC record, N times determined by the record count field"
@@ -176,9 +172,10 @@ class LISP_MapRequest(Packet):
         FieldLenField("recordcount", 0, fmt='B', count_of="eid_records"),
         XLongField("nonce", 0),
         ShortField("source_eid_afi", 0),
+        # the following can be zero , we do not account for that todo
         LISP_AddressField("source_eid_afi", "source_eid_address"),
         PacketListField("rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count+1),
-        PacketListField("eid_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.recordcount)
+        PacketListField("eid_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.recordcount)
     ]
 
 class LISP_MapReply(Packet):                                                    
