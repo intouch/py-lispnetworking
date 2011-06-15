@@ -205,6 +205,18 @@ class LISP_MapNotify(Packet):
         PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.recordcount)
     ]
 
+class LISP_Encapsulated_Control_Message(Packet):
+    """ encapsulated control message used after reading out the first 16 bytes 
+    this class only padds the 16 bits after LISP_TYPE and then adds the required headers """
+    
+    name = "LISP Encapsulated Control Message"
+    fields_desc = [
+        ShortField("reserved", 0),
+        ]
+
+    
+
+
 """ assemble a test LISP packet """
 def createLispMessage():
     return IP()/UDP(sport=4342,dport=4342)/LISP_Type()/LISP_MapRequest()/LISP_SourceRLOC()
@@ -226,6 +238,8 @@ bind_layers( LISP_Type, LISP_MapRequest, packettype=1)
 bind_layers( LISP_Type, LISP_MapReply, packettype=2)
 bind_layers( LISP_Type, LISP_MapRegister, packettype=3)
 bind_layers( LISP_Type, LISP_MapNotify, packettype=4)
+bind_layers( LISP_Type, LISP_Encapsulated_Control_Message, packettype=8)
+bind_layers( LISP_Encapsulated_Control_Message, IP)
 
 """ start scapy shell """
 #debug mode
