@@ -95,6 +95,10 @@ class LISP_AddressField(Field):
         elif getattr(pkt, self.fld_name) == _AFI["ipv6"]: 
             return self._ip6_field.addfield(pkt, s, val)
 
+def extract_padding(self, s):
+        return "", s
+
+
 """RECORD FIELDS, PART OF THE REPLY, REQUEST, NOTIFY OR REGISTER PACKET CLASSES"""
 
 class LISP_AFI_Address(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
@@ -105,9 +109,12 @@ class LISP_AFI_Address(Packet):                                                 
         #ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
         #ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==2)     # TODO read out of the v6 AFI, not sure about AFI number yet 
     ]
+    def extract_padding(self, s):
+        return "", s
+
 
 class LISP_Locator_Record(Packet):
-    name = "LISP Locatord Record"
+    name = "LISP Locator Records"
     fields_desc = [
         ByteField("priority", 0),
         ByteField("weight", 0),
@@ -118,6 +125,8 @@ class LISP_Locator_Record(Packet):
         ShortField("locator_afi", 0),
         LISP_AddressField("locator_afi", "locator_address")
     ]
+    def extract_padding(self, s):
+        return "", s
 
 class LISP_MapRecord(Packet):
     name = "LISP Map-Reply Record"
@@ -133,6 +142,8 @@ class LISP_MapRecord(Packet):
         LISP_AddressField("eid_prefix_afi", "eid_prefix"),
         PacketListField("locators", None, LISP_Locator_Record, count_from=lambda pkt: pkt.locator_count),
     ]
+    def extract_padding(self, s):
+        return "", s
 
 class LISP_MapRequestRecord(Packet):
     name= "LISP Map-Request Record"
