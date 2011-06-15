@@ -30,6 +30,27 @@ _AFI = {
     "lcaf" : 16387 
 }
 
+"""CLASS TO DETERMINE WHICH PACKET TYPE TO INTERPRET"""
+
+class LISP_Type(Packet):
+    """ first part of any lisp packet, in this class we also look at which flags are set
+    because scapy demands certain bit alignment. A class must contain N times 8 bit, in our case 16. """
+    name = "LISP packet type and flags"
+    fields_desc = [
+        BitEnumField("packettype", None, 4, _LISP_TYPES),
+        # MapRequest
+        ConditionalField(FlagsField("flags", 0, 12, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]), lambda pkt:pkt.packettype==1), 
+        # MapReply
+        ConditionalField(FlagsField("flags", 0, 12, ["probe", "echo_nonce_alg", "security"]), lambda pkt:pkt.packettype==2), 
+        # MapRegister 
+        ConditionalField(FlagsField("flags", 0, 12, ["proxy_map_reply"]), lambda pkt:pkt.packettype==3), 
+        # MapNotify
+        ConditionalField(BitField("reserved", 0, 12), lambda pkt:pkt.packettype==4), 
+        # Encapsulated Control Message
+        ConditionalField(FlagsField("flags", 0, 12, ["security"]), lambda pkt:pkt.packettype==8), 
+    ]
+
+
 """
     FIELDS
 
@@ -42,7 +63,7 @@ _AFI = {
     the AFI field. 
     
     An example would be: 
-       ByteField("record_afi", 2),
+       ShortField("record_afi", 0),
        LISPAddressField("record_afi", "record_address"),
 
 """
@@ -67,26 +88,6 @@ class LISP_AddressField(Field):
         elif getattr(pkt, self.fld_name) == _AFI["ipv6"]: 
             return self._ip6_field.addfield(pkt, s, val)
 
-"""CLASS TO DETERMINE WHICH PACKET TYPE TO INTERPRET"""
-
-class LISP_Type(Packet):
-    """ first part of any lisp packet, in this class we also look at which flags are set
-    because scapy demands certain bit alignment. A class must contain N times 8 bit, in our case 16. """
-    name = "LISP packet type and flags"
-    fields_desc = [
-        BitEnumField("packettype", None, 4, _LISP_TYPES),
-        # MapRequest
-        ConditionalField(FlagsField("flags", 0, 12, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]), lambda pkt:pkt.packettype==1), 
-        # MapReply
-        ConditionalField(FlagsField("flags", 0, 12, ["probe", "echo_nonce_alg", "security"]), lambda pkt:pkt.packettype==2), 
-        # MapRegister 
-        ConditionalField(FlagsField("flags", 0, 12, ["proxy_map_reply"]), lambda pkt:pkt.packettype==3), 
-        # MapNotify
-        ConditionalField(BitField("reserved", 0, 12), lambda pkt:pkt.packettype==4), 
-        # Encapsulated Control Message
-        ConditionalField(FlagsField("flags", 0, 12, ["security"]), lambda pkt:pkt.packettype==8), 
-    ]
-
 """RECORD FIELDS, PART OF THE REPLY, REQUEST, NOTIFY OR REGISTER PACKET CLASSES"""
 
 class LISP_SourceRLOC(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
@@ -106,7 +107,7 @@ class LISP_SourceEID(Packet):                                                   
         ConditionalField(IP6Field("v6_eid2", '2001::1'), lambda pkt:pkt.eid_src_afi==2)     # TODO read out of the v6 AFI, not sure about AFI number yet 
     ]
 
-class LISP_ReplyRecord(Packet):
+class LISP_MapRecord(Packet):
     name = "LISP Map-Reply Record"
     fields_desc = [
         BitField("record_ttl", 0, 32),
@@ -117,6 +118,7 @@ class LISP_ReplyRecord(Packet):
         BitField("A", 0, 1),
         BitField("reserved", 0, 16),
         BitField("map_version_number", 0, 12),
+# hardcoded stuff - we don't know for sure that it will be an IPv4 IPField
         ShortField("eid_prefix_afi", 0),
         IPField("eid_prefix", "2.2.2.2"),
 #        ConditionalField(IPField("v4_eids", '10.0.0.1'), lambda pkt:pkt.record_afi==1),     # read out of the v4 AFI, this field is 1 by default
@@ -177,7 +179,7 @@ class LISP_MapReply(Packet):
         ByteField("reserved_fields", 0),
         ByteField("recordcount", 0),
         XLongField("nonce", 0),
-        LISP_ReplyRecord
+        LISP_MapRecord
     ]
 
 
