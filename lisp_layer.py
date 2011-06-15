@@ -97,11 +97,11 @@ class LISP_AddressField(Field):
 
 """RECORD FIELDS, PART OF THE REPLY, REQUEST, NOTIFY OR REGISTER PACKET CLASSES"""
 
-class LISP_AFI_Address(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
+class LISP_AFI_Address(Packet):                     # used for 4 byte fields that contain a AFI and a v4 or v6 address
     name = "ITR RLOC Address"
     fields_desc = [
-        ShortField("afi", 0),                                                        # read out the AFI
-        LISP_AddressField("afi", "address"),
+        ShortField("afi", 0),                       # read out the AFI
+        ConditionalField(LISP_AddressField("afi", "address"), lambda pkt: pkt.afi!=0)
     ]
     def extract_padding(self, s):
         return "", s
@@ -114,7 +114,7 @@ class LISP_Locator_Record(Packet):
         ByteField("multicast_priority", 0),
         ByteField("multicast_weight", 0),
         BitField("reserved", 0, 13),
-        FlagsField("flags", 0, 3, ["L", "p", "R"]),
+        FlagsField("flags", None, 3, ["local_locator", "probe", "route"]),      # flag fields -  "L", "p", "R" 
         ShortField("locator_afi", 0),
         LISP_AddressField("locator_afi", "locator_address")
     ]
@@ -150,32 +150,20 @@ class LISP_MapRequestRecord(Packet):
     def extract_padding(self, s):
         return "", s
 
-class LISP_MapReplyRLOC(Packet):
-    name = "LISP Map-Reply RLOC record, N times determined by the record count field"
-    fields_desc = [
-        ByteField("priority", 1),                                               # unicast traffic priority
-        ByteField("weight", 1),                                                 # unicast traffic weight
-        ByteField("multicast_priority", 1),                                     # multicast traffic priority
-        ByteField("multicast_weight", 1),                                       # multicast traffic weight
-        BitField("unused_flags", "0"*13, 13),                                   # field reserved for unused flags
-        FlagsField("flags", None, 3, ["local_locator", "probe", "route"]),      # flag fields -  "L", "p", "R"  
-        ByteField("rloc_add", 4)                                                # the actual RLOC address
-    ]
-
 """PACKET TYPES (REPLY, REQUEST, NOTIFY OR REGISTER)"""
 
 class LISP_MapRequest(Packet):
     """ map request part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Request packet"
     fields_desc = [
-        FieldLenField("itr_rloc_count", 0, fmt='B', count_of="rloc_records"),
-        FieldLenField("recordcount", 0, fmt='B', count_of="eid_records"),
+        FieldLenField("itr_rloc_count", 0, fmt='B', count_of="itr_rloc_records"),
+        FieldLenField("recordcount", 0, fmt='B', count_of="maprequest_records"),
         XLongField("nonce", 0),
-        ShortField("source_eid_afi", 0),
-        # the following can be zero , we do not account for that todo
-        LISP_AddressField("source_eid_afi", "source_eid_address"),
-        PacketListField("rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count+1),
-        PacketListField("eid_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.recordcount)
+        # todo: the following should go here: source_eid_afi & source_eid instead of LISP_AFI_Address
+        LISP_AFI_Address,
+        # todo: what follows here is itr_rloc_afi and itr_rloc_address instead of LISP_AFI_Address
+        PacketListField("itr_rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count+1),
+        PacketListField("maprequest_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.recordcount)
     ]
 
 class LISP_MapReply(Packet):                                                    
