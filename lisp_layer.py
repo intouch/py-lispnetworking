@@ -46,15 +46,16 @@ class LISP_Type(Packet):
     fields_desc = [
         BitEnumField("packettype", None, 4, _LISP_TYPES),
         # MapRequest
-        ConditionalField(FlagsField("maprequest_flags", 0, 12, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]), lambda pkt:pkt.packettype==1), 
+        ConditionalField(FlagsField("maprequest_flags", 0, 8, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]), lambda pkt:pkt.packettype==1), 
         # MapReply
-        ConditionalField(FlagsField("mapreply_flags", 0, 12, ["probe", "echo_nonce_alg", "security" ]), lambda pkt:pkt.packettype==2), 
+        ConditionalField(FlagsField("mapreply_flags", 0, 8, ["probe", "echo_nonce_alg", "security" ]), lambda pkt:pkt.packettype==2), 
         # MapRegister 
-        ConditionalField(FlagsField("mapregister_flags", 0, 12, ["proxy_map_reply"]), lambda pkt:pkt.packettype==3), 
+        ConditionalField(FlagsField("mapregister_flags", 0, 8, ["proxy_map_reply"]), lambda pkt:pkt.packettype==3), 
         # MapNotify
-        ConditionalField(BitField("reserved", 0, 12), lambda pkt:pkt.packettype==4), 
+        ConditionalField(BitField("reserved", 0, 8), lambda pkt:pkt.packettype==4), 
         # Encapsulated Control Message
-        ConditionalField(FlagsField("ecm_flags", 0, 12, ["security"]), lambda pkt:pkt.packettype==8) 
+        ConditionalField(FlagsField("ecm_flags", 0, 8, ["security"]), lambda pkt:pkt.packettype==8),
+        BitField("reserved", 0, 4)
     ]
 
 
@@ -180,8 +181,8 @@ class LISP_MapRegister(Packet):
     """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Register packet"
     fields_desc = [
-        # TODO read M-bit around here
-        ByteField("reserved_fields", 0),
+        BitField("reserved", 0, 7),
+        BitField("M", 0, 1), 
         ByteField("recordcount", 0),
         XLongField("nonce", 0),
         ShortField("key_id", 0),
