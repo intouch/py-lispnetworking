@@ -94,7 +94,7 @@ class LISP_AFI_Address(Packet):                                                 
     name = "ITR RLOC Address"
     fields_desc = [
         ShortField("source_rloc_afi", 0),                                                        # read out the AFI
-        LISP_AddressField("source_rloc_afi", "src_address")
+        LISP_AddressField("source_rloc_afi", "src_address"),
         ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
         ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==2)     # TODO read out of the v6 AFI, not sure about AFI number yet 
     ]
