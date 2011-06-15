@@ -17,6 +17,13 @@ _LISP_TYPES = {
     8 : "encapsulated_control_message" 
 }
 
+_LISP_MAP_REPLY_ACTIONS = {
+    0 : "no_action",
+    1 : "native_forward",
+    2 : "send_map_request",
+    3 : "drop"
+}
+
 _AFI = {
     """ An AFI value of 0 used in this specification indicates an unspecified
     encoded address where the length of the address is 0 bytes
@@ -90,21 +97,13 @@ class LISP_AddressField(Field):
 
 """RECORD FIELDS, PART OF THE REPLY, REQUEST, NOTIFY OR REGISTER PACKET CLASSES"""
 
-class LISP_SourceRLOC(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
+class LISP_AFI_Address(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
     name = "ITR RLOC Address"
     fields_desc = [
         ShortField("source_rloc_afi", 0),                                                        # read out the AFI
-        LISP_AddressField("source_rloc_afi", "src_address")
-#        ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
-#        ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==2)     # TODO read out of the v6 AFI, not sure about AFI number yet 
-    ]
-
-class LISP_SourceEID(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
-    name = "reply record containing the source eid address"
-    fields_desc = [
-        ShortField("eid_src_afi", 0),                                                        # read out the AFI
-        ConditionalField(IPField("v4_eid2", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
-        ConditionalField(IP6Field("v6_eid2", '2001::1'), lambda pkt:pkt.eid_src_afi==2)     # TODO read out of the v6 AFI, not sure about AFI number yet 
+        LISP_AddressField("source_rloc_afi", "src_address"),
+        ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
+        ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==2)     # TODO read out of the v6 AFI, not sure about AFI number yet 
     ]
 
 class LISP_MapRecord(Packet):
@@ -113,9 +112,8 @@ class LISP_MapRecord(Packet):
         BitField("record_ttl", 0, 32),
         ByteField("locator_count", 0),
         ByteField("eid_mask_length", 0),
-# next field should be an enumeration i think 
-        BitField("ACT", 0, 3),
-        BitField("A", 0, 1),
+        BitEnumField("action", None, 3, _LISP_MAP_REPLY_ACTIONS),
+        BitField("authoritative", 0, 1),
         BitField("reserved", 0, 16),
         BitField("map_version_number", 0, 12),
 # hardcoded stuff - we don't know for sure that it will be an IPv4 IPField
@@ -166,8 +164,8 @@ class LISP_MapRequest(Packet):
         ShortField("source_eid_afi", 0),
         IPField("source_eid_address", "10.0.0.1"),
         # the following contains a hardcoded value of 6 bytes because we dont know how to program 
-        PacketListField("rloc_records", None, LISP_SourceRLOC, count_from=lambda pkt: pkt.itr_rloc_count+1),
-        PacketListField("eid_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.recordcount+1)
+        PacketListField("rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count+1),
+        PacketListField("eid_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.recordcount+1)
     ]
 
 class LISP_MapReply(Packet):                                                    
