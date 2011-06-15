@@ -176,6 +176,20 @@ class LISP_MapReply(Packet):
         PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.recordcount)
     ]
 
+class LISP_MapRegister(Packet):
+    """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
+    name = "LISP Map-Reply packet"
+    fields_desc = [
+        # TODO read M-bit around here
+        ByteField("reserved_fields", 0),
+        ByteField("recordcount", 0),
+        XLongField("nonce", 0),
+        ShortField("key_id", 0),
+        ShortField("authentication_length", 0),
+        # authentication length expresses itself in bytes, so no modifications needed here
+        StrLenField("authentication_data", None, length_from = lambda pkt: pkt.authentication_length),
+        PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.recordcount)
+    ]
 
 """ assemble a test LISP packet """
 def createLispMessage():
@@ -198,6 +212,7 @@ bind_layers( UDP, LISP_Type, dport=4342)
 bind_layers( UDP, LISP_Type, sport=4342)
 bind_layers( LISP_Type, LISP_MapRequest, packettype=1)
 bind_layers( LISP_Type, LISP_MapReply, packettype=2)
+bind_layers( LISP_Type, LISP_MapRegister, packettype=3)
 #bind_layers( LISPRequest, LISPSourceEID )
 
 """ start scapy shell """
