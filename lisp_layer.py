@@ -46,15 +46,15 @@ class LISP_Type(Packet):
     fields_desc = [
         BitEnumField("packettype", None, 4, _LISP_TYPES),
         # MapRequest
-        ConditionalField(FlagsField("flags", 0, 12, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]), lambda pkt:pkt.packettype==1), 
+        ConditionalField(FlagsField("maprequest_flags", 0, 12, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]), lambda pkt:pkt.packettype==1), 
         # MapReply
-        ConditionalField(FlagsField("flags", 0, 12, ["probe", "echo_nonce_alg", "security"]), lambda pkt:pkt.packettype==2), 
+        ConditionalField(FlagsField("mapreply_flags", 0, 12, ["probe", "echo_nonce_alg", "security" ]), lambda pkt:pkt.packettype==2), 
         # MapRegister 
-        ConditionalField(FlagsField("flags", 0, 12, ["proxy_map_reply"]), lambda pkt:pkt.packettype==3), 
+        ConditionalField(FlagsField("mapregister_flags", 0, 12, ["proxy_map_reply"]), lambda pkt:pkt.packettype==3), 
         # MapNotify
         ConditionalField(BitField("reserved", 0, 12), lambda pkt:pkt.packettype==4), 
         # Encapsulated Control Message
-        ConditionalField(FlagsField("flags", 0, 12, ["security"]), lambda pkt:pkt.packettype==8), 
+        ConditionalField(FlagsField("ecm_flags", 0, 12, ["security"]), lambda pkt:pkt.packettype==8) 
     ]
 
 
@@ -114,7 +114,7 @@ class LISP_Locator_Record(Packet):
         ByteField("multicast_priority", 0),
         ByteField("multicast_weight", 0),
         BitField("reserved", 0, 13),
-        FlagsField("flags", None, 3, ["local_locator", "probe", "route"]),      # flag fields -  "L", "p", "R" 
+        FlagsField("locator_flags", None, 3, ["local_locator", "probe", "route"]),      # flag fields -  "L", "p", "R" 
         ShortField("locator_afi", 0),
         LISP_AddressField("locator_afi", "locator_address")
     ]
