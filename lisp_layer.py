@@ -187,10 +187,9 @@ class LISP_MapRegister(Packet):
         ShortField("key_id", 0),
         ShortField("authentication_length", 0),
         # authentication length expresses itself in bytes, so no modifications needed here
-        StrLenField("authentication_data", None, length_from = lambda pkt: pkt.authentication_length)
+        StrLenField("authentication_data", None, length_from = lambda pkt: pkt.authentication_length),
+        PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.recordcount)
     ]
-
-
 
 """ assemble a test LISP packet """
 def createLispMessage():
