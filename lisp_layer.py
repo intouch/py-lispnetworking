@@ -166,7 +166,7 @@ class LISP_MapRequest(Packet):
         ShortField("source_eid_afi", 0),
         IPField("source_eid_address", "10.0.0.1"),
         # the following contains a hardcoded value of 6 bytes because we dont know how to program 
-        PacketListField("rloc_records", None, LISP_SourceRLOC, count_from=lambda pkt: pkt.itr_rloc_count+1, length_from=lambda pkt: pkt.itr_rloc_count+6),
+        PacketListField("rloc_records", None, LISP_SourceRLOC, count_from=lambda pkt: pkt.itr_rloc_count+1),
         PacketListField("eid_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.recordcount+1)
     ]
 
