@@ -166,7 +166,7 @@ class LISP_MapRequest(Packet):
         #IPField("source_eid_address", "10.0.0.1"),
         # the following contains a hardcoded value of 6 bytes because we dont know how to program 
         PacketListField("rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count+1),
-        PacketListField("eid_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.recordcount+1)
+        PacketListField("eid_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.recordcount)
     ]
 
 class LISP_MapReply(Packet):                                                    
