@@ -178,9 +178,23 @@ class LISP_MapReply(Packet):
 
 class LISP_MapRegister(Packet):
     """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
-    name = "LISP Map-Reply packet"
+    name = "LISP Map-Register packet"
     fields_desc = [
         # TODO read M-bit around here
+        ByteField("reserved_fields", 0),
+        ByteField("recordcount", 0),
+        XLongField("nonce", 0),
+        ShortField("key_id", 0),
+        ShortField("authentication_length", 0),
+        # authentication length expresses itself in bytes, so no modifications needed here
+        StrLenField("authentication_data", None, length_from = lambda pkt: pkt.authentication_length),
+        PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.recordcount)
+    ]
+
+class LISP_MapNotify(Packet):
+    """ map notify part used after the first 16 bits have been read by the LISP_Type class"""
+    name = "LISP Map-Notify packet"
+    fields_desc = [
         ByteField("reserved_fields", 0),
         ByteField("recordcount", 0),
         XLongField("nonce", 0),
@@ -195,7 +209,6 @@ class LISP_MapRegister(Packet):
 def createLispMessage():
     return IP()/UDP(sport=4342,dport=4342)/LISP_Type()/LISP_MapRequest()/LISP_SourceRLOC()
 
-
 """
 Bind LISP into scapy stack
 
@@ -205,7 +218,6 @@ lisp-data       4341/tcp   LISP Data Packets
 lisp-data       4341/udp   LISP Data Packets
 lisp-cons       4342/tcp   LISP-CONS Control
 lisp-control    4342/udp   LISP Data-Triggered Control
-
 """
 
 bind_layers( UDP, LISP_Type, dport=4342)
@@ -213,11 +225,9 @@ bind_layers( UDP, LISP_Type, sport=4342)
 bind_layers( LISP_Type, LISP_MapRequest, packettype=1)
 bind_layers( LISP_Type, LISP_MapReply, packettype=2)
 bind_layers( LISP_Type, LISP_MapRegister, packettype=3)
-#bind_layers( LISPRequest, LISPSourceEID )
+bind_layers( LISP_Type, LISP_MapNotify, packettype=4)
 
 """ start scapy shell """
 #debug mode
 if __name__ == "__main__":
     interact(mydict=globals(), mybanner="lisp debug")
-
-
