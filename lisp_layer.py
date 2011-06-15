@@ -17,6 +17,13 @@ _LISP_TYPES = {
     8 : "encapsulated_control_message" 
 }
 
+_LISP_MAP_REPLY_ACTIONS = {
+    0 : "no_action",
+    1 : "native_forward",
+    2 : "send_map_request",
+    3 : "drop"
+}
+
 _AFI = {
     """ An AFI value of 0 used in this specification indicates an unspecified
     encoded address where the length of the address is 0 bytes
@@ -105,9 +112,8 @@ class LISP_MapRecord(Packet):
         BitField("record_ttl", 0, 32),
         ByteField("locator_count", 0),
         ByteField("eid_mask_length", 0),
-# next field should be an enumeration i think 
-        BitField("ACT", 0, 3),
-        BitField("A", 0, 1),
+        BitEnumField("action", None, 3, _LISP_MAP_REPLY_ACTIONS),
+        BitField("authoritative", 0, 1),
         BitField("reserved", 0, 16),
         BitField("map_version_number", 0, 12),
 # hardcoded stuff - we don't know for sure that it will be an IPv4 IPField
