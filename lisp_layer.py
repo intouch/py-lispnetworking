@@ -106,21 +106,9 @@ class LISP_AFI_Address(Packet):                                                 
         #ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==2)     # TODO read out of the v6 AFI, not sure about AFI number yet 
     ]
 
-class LISP_MapRecord(Packet):
-    name = "LISP Map-Reply Record"
+class LISP_Locator_Record(Packet):
+    name = "LISP Locatord Record"
     fields_desc = [
-        BitField("record_ttl", 0, 32),
-        ByteField("locator_count", 0),
-        ByteField("eid_mask_length", 0),
-        BitEnumField("action", None, 3, _LISP_MAP_REPLY_ACTIONS),
-        BitField("authoritative", 0, 1),
-        BitField("reserved", 0, 16),
-        BitField("map_version_number", 0, 12),
-# hardcoded stuff - we don't know for sure that it will be an IPv4 IPField
-        ShortField("eid_prefix_afi", 0),
-        IPField("eid_prefix", "2.2.2.2"),
-#        ConditionalField(IPField("v4_eids", '10.0.0.1'), lambda pkt:pkt.record_afi==1),     # read out of the v4 AFI, this field is 1 by default
-#        ConditionalField(IP6Field("v6_eids", '2001::1'), lambda pkt:pkt.record_afi==2)     # TODO read out of the v6 AFI, not sure about AFI nr. 
         ByteField("priority", 0),
         ByteField("weight", 0),
         ByteField("multicast_priority", 0),
@@ -128,7 +116,22 @@ class LISP_MapRecord(Packet):
         BitField("reserved", 0, 13),
         FlagsField("flags", 0, 3, ["L", "p", "R"]),
         ShortField("locator_afi", 0),
-        IPField("locator_address", "1.1.1.1"),
+        LISP_AddressField("locator_afi", "locator_address")
+    ]
+
+class LISP_MapRecord(Packet):
+    name = "LISP Map-Reply Record"
+    fields_desc = [
+        BitField("record_ttl", 0, 32),
+        FieldLenField("locator_count",  0, fmt='B', count_of="locators"),
+        ByteField("eid_prefix_length", 0),
+        BitEnumField("action", None, 3, _LISP_MAP_REPLY_ACTIONS),
+        BitField("authoritative", 0, 1),
+        BitField("reserved", 0, 16),
+        BitField("map_version_number", 0, 12),
+        ShortField("eid_prefix_afi", 0),
+        LISP_AddressField("eid_prefix_afi", "eid_prefix"),
+        PacketListField("locators", None, LISP_Locator_Record, count_from=lambda pkt: pkt.locator_count),
     ]
 
 class LISP_MapRequestRecord(Packet):
@@ -172,9 +175,9 @@ class LISP_MapReply(Packet):
     name = "LISP Map-Reply packet"
     fields_desc = [
         ByteField("reserved_fields", 0),
-        ByteField("recordcount", 0),
+        FieldLenField("recordcount", 0, fmt='B', count_of="map_records"),
         XLongField("nonce", 0),
-        LISP_MapRecord
+        PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.recordcount)
     ]
 
 
