@@ -71,8 +71,7 @@ class LISP_AddressField(Field):
 
 class LISP_Type(Packet):
     """ first part of any lisp packet, in this class we also look at which flags are set
-    because scapy demands certain bit alignment. """
-
+    because scapy demands certain bit alignment. A class must contain N times 8 bit, in our case 16. """
     name = "LISP packet type and flags"
     fields_desc = [
         BitEnumField("packettype", None, 4, _LISP_TYPES),
@@ -153,7 +152,7 @@ class LISP_MapReplyRLOC(Packet):
         ByteField("rloc_add", 4)                                                # the actual RLOC address
     ]
 
-"""PACKET TYPES (REPLY, REQUEST, NOTIFY OR REGISTER"""
+"""PACKET TYPES (REPLY, REQUEST, NOTIFY OR REGISTER)"""
 
 class LISP_MapRequest(Packet):
     """ request part after the first 4 bits of a LISP message """
@@ -180,6 +179,7 @@ class LISP_MapReply(Packet):
         XLongField("nonce", 0),
         LISP_ReplyRecord
     ]
+
 
 """ assemble a test LISP packet """
 def createLispMessage():
