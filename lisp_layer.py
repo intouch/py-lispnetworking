@@ -90,8 +90,8 @@ class LISPSourceEID(Packet):                                                    
     name = "reply record containing the source eid address"
     fields_desc = [
         ByteField("eid_src_afi", 2),                                                        # read out the AFI
-        ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
-        ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==10)     # TODO read out of the v6 AFI, not sure about AFI number yet 
+        ConditionalField(IPField("v4_eid2", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
+        ConditionalField(IP6Field("v6_eid2", '2001::1'), lambda pkt:pkt.eid_src_afi==10)     # TODO read out of the v6 AFI, not sure about AFI number yet 
     ]
 
 class LISPReplyRecord(Packet):
@@ -153,9 +153,9 @@ class LISPMapRequest(Packet):
         XLongField("nonce", 0),
         ShortField("source_eid_afi", 0),
         IPField("source_eid_address", "10.0.0.1"),
-        LISPSourceRLOC,
-#        PacketListField("rloc_records", None, LISPSourceRLOC, count_from=lambda pkt:pkt.itr_rloc_count),
-        PacketListField("eid_records", None, LISPMapRequestRecord, count_from=lambda pkt:pkt.recordcount)
+        PacketListField("rloc_records", None, LISPSourceRLOC, count_from=lambda pkt: pkt.itr_rloc_count+1,
+        length_from=lambda pkt: pkt.recordcount + 5),
+        PacketListField("eid_records", None, LISPMapRequestRecord, count_from=lambda pkt: pkt.recordcount+1)
     ]
 
 class LISPMapReply(Packet):                                                    
@@ -165,9 +165,8 @@ class LISPMapReply(Packet):
         FlagsField("flags", 0, 4, ["probe", "echo_nonce_alg", "security"]),
         ShortField("reserved_fields", 0),
         ByteField("recordcount", 0),
-        XLongField("nonce", 0),
-        LISPReplyRecord,
-    ]
+        XLongField("nonce", 0)
+         ]
 
 """ assemble a test LISP packet """
 def createLispMessage():
