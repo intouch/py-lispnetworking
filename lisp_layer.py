@@ -77,7 +77,7 @@ class LISP_Type(Packet):
 
 class LISP_AddressField(Field):
     def __init__(self, fld_name, ip_fld_name):
-        Field.__init__(self, "LISP Address Field", None)
+        Field.__init__(self, ip_fld_name, None)
         
         self.fld_name=fld_name
         self._ip_field=IPField(ip_fld_name, "192.168.1.1")
@@ -100,8 +100,8 @@ class LISP_AddressField(Field):
 class LISP_AFI_Address(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
     name = "ITR RLOC Address"
     fields_desc = [
-        ShortField("source_rloc_afi", 0),                                                        # read out the AFI
-        LISP_AddressField("source_rloc_afi", "src_address"),
+        ShortField("afi", 0),                                                        # read out the AFI
+        LISP_AddressField("afi", "address"),
         #ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
         #ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==2)     # TODO read out of the v6 AFI, not sure about AFI number yet 
     ]
