@@ -102,8 +102,8 @@ class LISP_AFI_Address(Packet):                                                 
     fields_desc = [
         ShortField("source_rloc_afi", 0),                                                        # read out the AFI
         LISP_AddressField("source_rloc_afi", "src_address"),
-        ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
-        ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==2)     # TODO read out of the v6 AFI, not sure about AFI number yet 
+        #ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
+        #ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==2)     # TODO read out of the v6 AFI, not sure about AFI number yet 
     ]
 
 class LISP_MapRecord(Packet):
@@ -162,7 +162,8 @@ class LISP_MapRequest(Packet):
         FieldLenField("recordcount", 0, fmt='B', count_of="eid_records"),
         XLongField("nonce", 0),
         ShortField("source_eid_afi", 0),
-        IPField("source_eid_address", "10.0.0.1"),
+        LISP_AddressField("source_eid_afi", "source_eid_address"),
+        #IPField("source_eid_address", "10.0.0.1"),
         # the following contains a hardcoded value of 6 bytes because we dont know how to program 
         PacketListField("rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count+1),
         PacketListField("eid_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.recordcount+1)
