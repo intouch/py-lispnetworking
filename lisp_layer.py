@@ -97,11 +97,11 @@ class LISP_AddressField(Field):
 
 """RECORD FIELDS, PART OF THE REPLY, REQUEST, NOTIFY OR REGISTER PACKET CLASSES"""
 
-class LISP_AFI_Address(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
+class LISP_AFI_Address(Packet):                     # used for 4 byte fields that contain a AFI and a v4 or v6 address
     name = "ITR RLOC Address"
     fields_desc = [
-        ShortField("afi", 0),                                                        # read out the AFI
-        LISP_AddressField("afi", "address"),
+        ShortField("afi", 0),                       # read out the AFI
+        ConditionalField(LISP_AddressField("afi", "address"), lambda pkt: pkt.afi!=0)
     ]
     def extract_padding(self, s):
         return "", s
@@ -171,9 +171,9 @@ class LISP_MapRequest(Packet):
         FieldLenField("itr_rloc_count", 0, fmt='B', count_of="rloc_records"),
         FieldLenField("recordcount", 0, fmt='B', count_of="eid_records"),
         XLongField("nonce", 0),
-        ShortField("source_eid_afi", 0),
+        LISP_AFI_Address,
         # the following can be zero , we do not account for that todo
-        LISP_AddressField("source_eid_afi", "source_eid_address"),
+        # LISP_AddressField("source_eid_afi", "source_eid_address"),
         PacketListField("rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count+1),
         PacketListField("eid_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.recordcount)
     ]
