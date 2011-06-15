@@ -85,9 +85,9 @@ class LISP_AddressField(Field):
 
     def getfield(self, pkt, s):
         if getattr(pkt, self.fld_name) == _AFI["ipv4"]:
-            return _ip_field.getfield(pkt,s)
+            return self._ip_field.getfield(pkt,s)
         elif getattr(pkt, self.fld_name) == _AFI["ipv6"]:
-            return _ip6_field.getfield(pkt,s)
+            return self._ip6_field.getfield(pkt,s)
     
     def addfield(self, pkt, s, val):
         if getattr(pkt, self.fld_name) == _AFI["ipv4"]:
