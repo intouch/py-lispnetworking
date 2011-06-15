@@ -153,8 +153,8 @@ class LISPMapRequest(Packet):
         XLongField("nonce", 0),
         ShortField("source_eid_afi", 0),
         IPField("source_eid_address", "10.0.0.1"),
-        PacketListField("rloc_records", None, LISPSourceRLOC, count_from=lambda pkt: pkt.itr_rloc_count+1,
 """ the following code has a hardcoded value of 5 bytes, we need to fix that with some nice lambda """
+        PacketListField("rloc_records", None, LISPSourceRLOC, count_from=lambda pkt: pkt.itr_rloc_count+1,
         length_from=lambda pkt: pkt.recordcount + 5),
         PacketListField("eid_records", None, LISPMapRequestRecord, count_from=lambda pkt: pkt.recordcount+1)
     ]
