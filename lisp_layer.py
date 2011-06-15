@@ -93,9 +93,10 @@ class LISP_Type(Packet):
 class LISP_SourceRLOC(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
     name = "ITR RLOC Address"
     fields_desc = [
-        ShortField("eid_src_afi", 0),                                                        # read out the AFI
-        ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
-        ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==2)     # TODO read out of the v6 AFI, not sure about AFI number yet 
+        ShortField("source_rloc_afi", 0),                                                        # read out the AFI
+        LISP_AddressField("source_rloc_afi", "src_address")
+#        ConditionalField(IPField("v4_eid", '10.0.0.1'), lambda pkt:pkt.eid_src_afi==1),     # read out of the v4 AFI, this field is 1 by default
+#        ConditionalField(IP6Field("v6_eid", '2001::1'), lambda pkt:pkt.eid_src_afi==2)     # TODO read out of the v6 AFI, not sure about AFI number yet 
     ]
 
 class LISP_SourceEID(Packet):                                                                # used for 4 byte fields that contain a AFI and a v4 or v6 address
