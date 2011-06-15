@@ -155,7 +155,7 @@ class LISP_MapReplyRLOC(Packet):
 """PACKET TYPES (REPLY, REQUEST, NOTIFY OR REGISTER)"""
 
 class LISP_MapRequest(Packet):
-    """ request part after the first 4 bits of a LISP message """
+    """ map request part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Request packet"
     fields_desc = [
         FieldLenField("itr_rloc_count", 0, fmt='B', count_of="rloc_records"),
@@ -163,18 +163,14 @@ class LISP_MapRequest(Packet):
         XLongField("nonce", 0),
         ShortField("source_eid_afi", 0),
         LISP_AddressField("source_eid_afi", "source_eid_address"),
-        #IPField("source_eid_address", "10.0.0.1"),
-        # the following contains a hardcoded value of 6 bytes because we dont know how to program 
         PacketListField("rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count+1),
         PacketListField("eid_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.recordcount)
     ]
 
 class LISP_MapReply(Packet):                                                    
-    """ request part after the first 4 bits of a LISP message """
+    """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Reply packet"
     fields_desc = [
-        # now handled in LISPHeader
-        # FlagsField("flags", 0, 4, ["probe", "echo_nonce_alg", "security"]),
         ByteField("reserved_fields", 0),
         ByteField("recordcount", 0),
         XLongField("nonce", 0),
