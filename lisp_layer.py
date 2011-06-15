@@ -45,7 +45,20 @@ class LISP_Type(Packet):
     name = "LISP packet type and flags"
     fields_desc = [
         BitEnumField("packettype", None, 4, _LISP_TYPES),
-        # MapRequest
+    ]
+
+    def guess_payload_class(self, payload):
+        if self.packettype == 1:
+            return LISP_MapRequest
+        if self.packettype == 2:
+            return LISP_MapReply
+        if self.packettype == 3:
+            return LISP_MapRegister
+        if self.packettype == 4:
+            return LISP_MapNotify
+
+"""
+    # MapRequest
         ConditionalField(FlagsField("maprequest_flags", 0, 8, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]), lambda pkt:pkt.packettype==1), 
         # MapReply
         ConditionalField(FlagsField("mapreply_flags", 0, 8, ["probe", "echo_nonce_alg", "security" ]), lambda pkt:pkt.packettype==2), 
@@ -57,7 +70,7 @@ class LISP_Type(Packet):
         ConditionalField(FlagsField("ecm_flags", 0, 8, ["security"]), lambda pkt:pkt.packettype==8),
         BitField("reserved", 0, 4)
     ]
-
+"""
 
 """
     FIELDS
@@ -157,6 +170,8 @@ class LISP_MapRequest(Packet):
     """ map request part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Request packet"
     fields_desc = [
+        FlagsField("maprequest_flags", 0, 8, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
+        BitField("reserved", 0, 4),
         FieldLenField("itr_rloc_count", 0, fmt='B', count_of="itr_rloc_records"),
         FieldLenField("recordcount", 0, fmt='B', count_of="maprequest_records"),
         XLongField("nonce", 0),
@@ -171,7 +186,8 @@ class LISP_MapReply(Packet):
     """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Reply packet"
     fields_desc = [
-        ByteField("reserved_fields", 0),
+        FlagsField("mapreply_flags", 0, 8, ["probe", "echo_nonce_alg", "security" ]),
+        BitField("reserved", 0, 12),
         FieldLenField("recordcount", 0, fmt='B', count_of="map_records"),
         XLongField("nonce", 0),
         PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.recordcount)
@@ -181,7 +197,8 @@ class LISP_MapRegister(Packet):
     """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Register packet"
     fields_desc = [
-        BitField("reserved", 0, 7),
+        FlagsField("mapregister_flags", 0, 8, ["proxy_map_reply"]),
+        BitField("reserved", 0, 11),
         BitField("M", 0, 1), 
         ByteField("recordcount", 0),
         XLongField("nonce", 0),
@@ -196,6 +213,7 @@ class LISP_MapNotify(Packet):
     """ map notify part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Notify packet"
     fields_desc = [
+        BitField("reserved", 0, 12),
         ByteField("reserved_fields", 0),
         ByteField("recordcount", 0),
         XLongField("nonce", 0),
