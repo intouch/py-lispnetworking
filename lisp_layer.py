@@ -147,15 +147,15 @@ class LISPMapRequest(Packet):
     name = "LISP request packet"
     fields_desc = [
         FlagsField("flags", 0, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
-        BitField("reserved_fields", None, 9),
-        BitField("itr_rloc_count", 0, 5),
+        # we snoop a bit from the reserved field so we dont have to figure out bit alignment right now 
+        BitField("reserved_fields", None, 6),
+        FieldLenField("itr_rloc_count", 0, fmt='B', count_of="rloc_records"),
         FieldLenField("recordcount", 0, fmt='B', count_of="eid_records"),
         XLongField("nonce", 0),
         ShortField("source_eid_afi", 0),
         IPField("source_eid_address", "10.0.0.1"),
-""" the following code has a hardcoded value of 6 bytes, we need to fix that with some nice lambda """
-        PacketListField("rloc_records", None, LISPSourceRLOC, count_from=lambda pkt: pkt.itr_rloc_count+1,
-        length_from=lambda pkt: pkt.itr_rloc_count + 6),
+        # the following contains a hardcoded value of 6 bytes because we dont know how to program 
+        PacketListField("rloc_records", None, LISPSourceRLOC, count_from=lambda pkt: pkt.itr_rloc_count+1, length_from=lambda pkt: pkt.itr_rloc_count+6),
         PacketListField("eid_records", None, LISPMapRequestRecord, count_from=lambda pkt: pkt.recordcount+1)
     ]
 
@@ -166,8 +166,9 @@ class LISPMapReply(Packet):
         FlagsField("flags", 0, 4, ["probe", "echo_nonce_alg", "security"]),
         ShortField("reserved_fields", 0),
         ByteField("recordcount", 0),
-        XLongField("nonce", 0)
-         ]
+        XLongField("nonce", 0),
+        LISPReplyRecord
+    ]
 
 """ assemble a test LISP packet """
 def createLispMessage():
