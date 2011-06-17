@@ -44,22 +44,26 @@ class LISP_Type(Packet):
     because scapy demands certain bit alignment. A class must contain N times 8 bit, in our case 16. """
     name = "LISP packet type and flags"
     fields_desc = [
-        BitEnumField("packettype", None, 4, _LISP_TYPES),
+        BitEnumField("packettype", 0, 4, _LISP_TYPES),
+	# request flag fields
+	ConditionalField(FlagsField("request_flags", None, 6, ["A","M","P","S","p","s"]), lambda pkt:pkt.packettype==1),
+	ConditionalField(BitField("p1", 0, 6), lambda pkt:pkt.packettype==1),
+	# reply flag fields	
+	ConditionalField(FlagsField("reply_flags", None, 3, ["P", "E", "S"]), lambda pkt:pkt.packettype==2),
+	ConditionalField(BitField("p2", 0, 9), lambda pkt:pkt.packettype==2),
+	# register flag fields	
+	ConditionalField(FlagsField("register_flags", None, 1, ["P"]), lambda pkt:pkt.packettype==3),
+	ConditionalField(BitField("p3", 0, 11), lambda pkt:pkt.packettype==3),
+	# notify flag fields	
+	ConditionalField(BitField("p4", 0, 12), lambda pkt:pkt.packettype==4),
+	# register flag fields	
+	ConditionalField(FlagsField("ecm_flags1", None, 1, ["P"]), lambda pkt:pkt.packettype==8),
+	ConditionalField(BitField("p8", 0, 18), lambda pkt:pkt.packettype==8),
+	ConditionalField(FlagsField("ecm_flags2", None, 1, ["M"]), lambda pkt:pkt.packettype==8)
     ]
 
-    def guess_payload_class(self, payload):
-        if self.packettype == 1:
-            return LISP_MapRequest
-        if self.packettype == 2:
-            return LISP_MapReply
-        if self.packettype == 3:
-            return LISP_MapRegister
-        if self.packettype == 4:
-            return LISP_MapNotify
-        if self.packettype == 8:
-            return LISP_Encapsulated_Control_Message
-"""
-    FIELDS
+
+""" FIELDS
 
     LISPAddressField DESCRIPTION
 
@@ -156,10 +160,11 @@ class LISP_MapRequest(Packet):
     """ map request part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Request packet"
     fields_desc = [
-        FlagsField("flags", 0, 8, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
-        BitField("reserved", 0, 4),
-        FieldLenField("itr_rloc_count", 0, fmt='B', count_of="itr_rloc_records"),
-        FieldLenField("recordcount", 0, fmt='B', count_of="maprequest_records"),
+        BitField("reserved", 0, 3),
+        # TODO
+        # FieldLenField("itr_rloc_count", 0, fmt='B', count_of="itr_rloc_records"), 
+        BitField("itr_rloc_count", 0, 5), 
+        ByteField("recordcount", 0),
         XLongField("nonce", 0),
         # todo: the following should go here: source_eid_afi & source_eid instead of LISP_AFI_Address
         LISP_AFI_Address,
@@ -172,9 +177,8 @@ class LISP_MapReply(Packet):
     """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Reply packet"
     fields_desc = [
-        FlagsField("flags", 0, 8, ["probe", "echo_nonce_alg", "security" ]),
-        BitField("reserved", 0, 12),
-        FieldLenField("recordcount", 0, fmt='B', count_of="map_records"),
+        ByteField("reserved", 0),
+        ByteField("recordcount", 0),
         XLongField("nonce", 0),
         PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.recordcount)
     ]
@@ -182,11 +186,7 @@ class LISP_MapReply(Packet):
 class LISP_MapRegister(Packet):
     """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Register packet"
-    fields_desc = [
-        FlagsField("flags", 0, 8, ["proxy_map_reply"]),
-        BitField("reserved", 0, 11),
-        BitField("M", 0, 1), 
-        ByteField("recordcount", 0),
+    fields_desc = [ ByteField("recordcount", 0),
         XLongField("nonce", 0),
         ShortField("key_id", 0),
         ShortField("authentication_length", 0),
@@ -216,8 +216,8 @@ class LISP_Encapsulated_Control_Message(Packet):
     
     name = "LISP Encapsulated Control Message"
     fields_desc = [
-        FlagsField("flags", 0, 4, ["security"]),
-        BitField("reserved", 0, 8), 
+        FlagsField("flags_ecm", 0, 1, ["security"]),
+        BitField("reserved", 0, 11), 
         ShortField("reserved", 0)
     ]
 
