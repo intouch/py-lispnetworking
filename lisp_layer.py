@@ -46,21 +46,21 @@ class LISP_Type(Packet):
     fields_desc = [
         BitEnumField("packettype", 0, 4, _LISP_TYPES),
 	# request flag fields
-	ConditionalField(FlagsField("request_flags", None, 6, ["A","M","P","S","p","s"]), lambda pkt:pkt.packettype==1),
+	ConditionalField(FlagsField("request_flags", None, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]), lambda pkt:pkt.packettype==1),
 	ConditionalField(BitField("p1", 0, 6), lambda pkt:pkt.packettype==1),
 	# reply flag fields	
-	ConditionalField(FlagsField("reply_flags", None, 3, ["P", "E", "S"]), lambda pkt:pkt.packettype==2),
+	ConditionalField(FlagsField("reply_flags", None, 3, ["probe", "echo_nonce_alg", "security" ]), lambda pkt:pkt.packettype==2),
 	ConditionalField(BitField("p2", 0, 9), lambda pkt:pkt.packettype==2),
 	# register flag fields	
-	ConditionalField(FlagsField("register_flags", None, 1, ["P"]), lambda pkt:pkt.packettype==3),
-	ConditionalField(BitField("p3", 0, 11), lambda pkt:pkt.packettype==3),
+	ConditionalField(FlagsField("register_flags", None, 1, ["proxy_map_reply"]), lambda pkt:pkt.packettype==3),
+	ConditionalField(BitField("p3", 0, 18), lambda pkt:pkt.packettype==3),
+    ConditionalField(FlagsField("register_flags", None, 1, ["want-map-notify"]), lambda pkt:pkt.packettype==3),
 	# notify flag fields	
 	ConditionalField(BitField("p4", 0, 12), lambda pkt:pkt.packettype==4),
-	# register flag fields	
-	ConditionalField(FlagsField("ecm_flags1", None, 1, ["P"]), lambda pkt:pkt.packettype==8),
-	ConditionalField(BitField("p8", 0, 18), lambda pkt:pkt.packettype==8),
-	ConditionalField(FlagsField("ecm_flags2", None, 1, ["M"]), lambda pkt:pkt.packettype==8)
-    ]
+	# encapsulated packet flag fields	
+	ConditionalField(FlagsField("ecm_flags", None, 1, ["security"]), lambda pkt:pkt.packettype==8),
+	ConditionalField(BitField("p8", 0, 27), lambda pkt:pkt.packettype==8)
+        ]
 
 
 """ FIELDS
@@ -210,19 +210,6 @@ class LISP_MapNotify(Packet):
         PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.recordcount)
     ]
 
-class LISP_Encapsulated_Control_Message(Packet):
-    """ encapsulated control message used after reading out the first 16 bytes 
-    this class only padds the 16 bits after LISP_TYPE and then adds the required headers """
-    
-    name = "LISP Encapsulated Control Message"
-    fields_desc = [
-        FlagsField("flags_ecm", 0, 1, ["security"]),
-        BitField("reserved", 0, 11), 
-        ShortField("reserved", 0)
-    ]
-
-    
-
 
 """ assemble a test LISP packet """
 def createLispMessage():
@@ -245,8 +232,7 @@ bind_layers( LISP_Type, LISP_MapRequest, packettype=1)
 bind_layers( LISP_Type, LISP_MapReply, packettype=2)
 bind_layers( LISP_Type, LISP_MapRegister, packettype=3)
 bind_layers( LISP_Type, LISP_MapNotify, packettype=4)
-bind_layers( LISP_Type, LISP_Encapsulated_Control_Message, packettype=8)
-bind_layers( LISP_Encapsulated_Control_Message, IP)
+bind_layers( LISP_Type, IP, packettype=8)
 
 """ start scapy shell """
 #debug mode
