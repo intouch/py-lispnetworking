@@ -39,25 +39,27 @@ _AFI = {
 
 """CLASS TO DETERMINE WHICH PACKET TYPE TO INTERPRET"""
 
+""" TODO - check if we can replace the BitFields used for padding with something nicer """
+
 class LISP_Type(Packet):
     """ first part of any lisp packet, in this class we also look at which flags are set
     because scapy demands certain bit alignment. A class must contain N times 8 bit, in our case 16. """
     name = "LISP packet type and flags"
     fields_desc = [
         BitEnumField("packettype", 0, 4, _LISP_TYPES),
-	# request flag fields
+	# request flag fields, followed by 6 pad fields
 	ConditionalField(FlagsField("request_flags", None, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]), lambda pkt:pkt.packettype==1),
 	ConditionalField(BitField("p1", 0, 6), lambda pkt:pkt.packettype==1),
-	# reply flag fields	
+	# reply flag fields, followed by 9 padding bits
 	ConditionalField(FlagsField("reply_flags", None, 3, ["probe", "echo_nonce_alg", "security" ]), lambda pkt:pkt.packettype==2),
 	ConditionalField(BitField("p2", 0, 9), lambda pkt:pkt.packettype==2),
-	# register flag fields	
+	# register flag fields, with 18 padding bits in between	
 	ConditionalField(FlagsField("register_flags", None, 1, ["proxy_map_reply"]), lambda pkt:pkt.packettype==3),
 	ConditionalField(BitField("p3", 0, 18), lambda pkt:pkt.packettype==3),
     ConditionalField(FlagsField("register_flags", None, 1, ["want-map-notify"]), lambda pkt:pkt.packettype==3),
-	# notify flag fields	
+	# notify packet reserved fields
 	ConditionalField(BitField("p4", 0, 12), lambda pkt:pkt.packettype==4),
-	# encapsulated packet flag fields	
+	# encapsulated packet flag fields, the flag gets read and passed back to the IP stack (see bindings)	
 	ConditionalField(FlagsField("ecm_flags", None, 1, ["security"]), lambda pkt:pkt.packettype==8),
 	ConditionalField(BitField("p8", 0, 27), lambda pkt:pkt.packettype==8)
         ]
@@ -107,6 +109,8 @@ class LISP_AFI_Address(Packet):                     # used for 4 byte fields tha
         ShortField("afi", 0),                       # read out the AFI
         ConditionalField(LISP_AddressField("afi", "address"), lambda pkt: pkt.afi!=0)
     ]
+
+    # delimits the packet, so that the remaining records are not contained as 'raw' payloads
     def extract_padding(self, s):
         return "", s
 
@@ -118,11 +122,13 @@ class LISP_Locator_Record(Packet):
         ByteField("multicast_priority", 0),
         ByteField("multicast_weight", 0),
         BitField("reserved", 0, 13),
-        FlagsField("locator_flags", None, 3, ["local_locator", "probe", "route"]),      # flag fields -  "L", "p", "R" 
+        FlagsField("locator_flags", None, 3, ["local_locator", "probe", "route"]), 
         ShortField("locator_afi", 0),
         LISP_AddressField("locator_afi", "locator_address")
     ]
-    def extract_padding(self, s):
+
+    # delimits the packet, so that the remaining records are not contained as 'raw' payloads
+   def extract_padding(self, s):
         return "", s
 
 class LISP_MapRecord(Packet):
@@ -139,6 +145,8 @@ class LISP_MapRecord(Packet):
         LISP_AddressField("eid_prefix_afi", "eid_prefix"),
         PacketListField("locators", None, LISP_Locator_Record, count_from=lambda pkt: pkt.locator_count),
     ]
+
+    # delimits the packet, so that the remaining records are not contained as 'raw' payloads
     def extract_padding(self, s):
         return "", s
 
@@ -150,7 +158,8 @@ class LISP_MapRequestRecord(Packet):
         ShortField("eid_prefix_afi", 0),
         LISP_AddressField("eid_prefix_afi", "eid_prefix")
     ]
-    
+   
+    # delimits the packet, so that the remaining records are not contained as 'raw' payloads
     def extract_padding(self, s):
         return "", s
 
@@ -161,7 +170,6 @@ class LISP_MapRequest(Packet):
     name = "LISP Map-Request packet"
     fields_desc = [
         BitField("reserved", 0, 3),
-        # TODO
         # FieldLenField("itr_rloc_count", 0, fmt='B', count_of="itr_rloc_records"), 
         BitField("itr_rloc_count", 0, 5), 
         ByteField("recordcount", 0),
@@ -210,11 +218,6 @@ class LISP_MapNotify(Packet):
         PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.recordcount)
     ]
 
-
-""" assemble a test LISP packet """
-def createLispMessage():
-    return IP()/UDP(sport=4342,dport=4342)/LISP_Type()/LISP_MapRequest()/LISP_SourceRLOC()
-
 """
 Bind LISP into scapy stack
 
@@ -226,15 +229,17 @@ lisp-cons       4342/tcp   LISP-CONS Control
 lisp-control    4342/udp   LISP Data-Triggered Control
 """
 
+# tie LISP into the IP/UDP stack
 bind_layers( UDP, LISP_Type, dport=4342)
 bind_layers( UDP, LISP_Type, sport=4342)
 bind_layers( LISP_Type, LISP_MapRequest, packettype=1)
 bind_layers( LISP_Type, LISP_MapReply, packettype=2)
 bind_layers( LISP_Type, LISP_MapRegister, packettype=3)
 bind_layers( LISP_Type, LISP_MapNotify, packettype=4)
+# if an encapsulated packet shows up, rebind to the IP stack
 bind_layers( LISP_Type, IP, packettype=8)
 
 """ start scapy shell """
-#debug mode
+# debug mode
 if __name__ == "__main__":
     interact(mydict=globals(), mybanner="lisp debug")
