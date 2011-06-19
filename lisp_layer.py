@@ -64,7 +64,6 @@ class LISP_Type(Packet):
 	ConditionalField(BitField("p8", 0, 27), lambda pkt:pkt.packettype==8)
         ]
 
-
 """ FIELDS
 
     LISPAddressField DESCRIPTION
@@ -128,14 +127,14 @@ class LISP_Locator_Record(Packet):
     ]
 
     # delimits the packet, so that the remaining records are not contained as 'raw' payloads
-   def extract_padding(self, s):
+    def extract_padding(self, s):
         return "", s
 
 class LISP_MapRecord(Packet):
     name = "LISP Map-Reply Record"
     fields_desc = [
         BitField("record_ttl", 0, 32),
-        FieldLenField("locator_count",  0, fmt='B', count_of="locators"),
+        FieldLenField("locator_count",  0, count_of="locators"),
         ByteField("eid_prefix_length", 0),
         BitEnumField("action", None, 3, _LISP_MAP_REPLY_ACTIONS),
         BitField("authoritative", 0, 1),
@@ -170,15 +169,15 @@ class LISP_MapRequest(Packet):
     name = "LISP Map-Request packet"
     fields_desc = [
         BitField("reserved", 0, 3),
+        # TODO - make sure that the FieldLenField equals 5 bits and not a byte!
         # FieldLenField("itr_rloc_count", 0, fmt='B', count_of="itr_rloc_records"), 
         BitField("itr_rloc_count", 0, 5), 
-        ByteField("recordcount", 0),
+        FieldLenField("request_count", 0, fmt='B', count_of="request_records"),  
         XLongField("nonce", 0),
-        # todo: the following should go here: source_eid_afi & source_eid instead of LISP_AFI_Address
+        # below, the source address is listed, this occurs once per packet
         LISP_AFI_Address,
-        # todo: what follows here is itr_rloc_afi and itr_rloc_address instead of LISP_AFI_Address
         PacketListField("itr_rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count+1),
-        PacketListField("maprequest_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.recordcount)
+        PacketListField("request_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.request_count)
     ]
 
 class LISP_MapReply(Packet):                                                    
@@ -186,21 +185,22 @@ class LISP_MapReply(Packet):
     name = "LISP Map-Reply packet"
     fields_desc = [
         ByteField("reserved", 0),
-        ByteField("recordcount", 0),
+        FieldLenField("map_count", 0, count_of="map_records"),  
         XLongField("nonce", 0),
-        PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.recordcount)
+        PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.map_count)
     ]
 
 class LISP_MapRegister(Packet):
     """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Register packet"
-    fields_desc = [ ByteField("recordcount", 0),
+    fields_desc = [ 
+        FieldLenField("register_count",  0, count_of="register_records"),
         XLongField("nonce", 0),
         ShortField("key_id", 0),
         ShortField("authentication_length", 0),
         # authentication length expresses itself in bytes, so no modifications needed here
         StrLenField("authentication_data", None, length_from = lambda pkt: pkt.authentication_length),
-        PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.recordcount)
+        PacketListField("register_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.register__count)
     ]
 
 class LISP_MapNotify(Packet):
@@ -209,14 +209,18 @@ class LISP_MapNotify(Packet):
     fields_desc = [
         BitField("reserved", 0, 12),
         ByteField("reserved_fields", 0),
-        ByteField("recordcount", 0),
+        FieldLenField("notify_count", None, count_of="notify_records"),
         XLongField("nonce", 0),
         ShortField("key_id", 0),
         ShortField("authentication_length", 0),
         # authentication length expresses itself in bytes, so no modifications needed here
         StrLenField("authentication_data", None, length_from = lambda pkt: pkt.authentication_length),
-        PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.recordcount)
+        PacketListField("notify_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.notify_count)
     ]
+
+def sendLIGquery(server, query):
+    """ trying to spawn a map request that can be answered by a mapserver """
+    return IP()/UDP(sport=4342,dport=4342)/LISP_Type(packettype=1)/LISP_MapRequest()
 
 """
 Bind LISP into scapy stack
