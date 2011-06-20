@@ -168,16 +168,17 @@ class LISP_MapRequest(Packet):
     """ map request part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Request packet"
     fields_desc = [
-        BitField("reserved", 0, 3),
-        # TODO - make sure that the FieldLenField equals 5 bits and not a byte! - TODO
-        # FieldLenField("itr_rloc_count", 0, fmt='B', count_of="itr_rloc_records"), 
-        BitField("itr_rloc_count", 0, 5), 
+        # TODO - make sure that the FieldLenField equals 5 bits and not a byte! 
+        # Right now we steal 3 extra bits from the reserved fields that are prior to the itr_rloc_records
+        #  BitField("reserved", 0, 3), 
+        #  BitField("itr_rloc_count", 0, 5), 
+        FieldLenField("itr_rloc_count", 0, fmt='B', count_of="itr_rloc_records"),                          
         FieldLenField("request_count", 0, fmt='B', count_of="request_records"),  
         XLongField("nonce", 0),
         # below, the source address of the request is listed, this occurs once per packet
         LISP_AFI_Address,
         PacketListField("itr_rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count+1),
-        PacketListField("request_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.request_count)
+        PacketListField("request_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.request_count) 
     ]
 
 class LISP_MapReply(Packet):                                                    
