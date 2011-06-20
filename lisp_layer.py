@@ -134,7 +134,7 @@ class LISP_MapRecord(Packet):
     name = "LISP Map-Reply Record"
     fields_desc = [
         BitField("record_ttl", 0, 32),
-        FieldLenField("locator_count",  0, count_of="locators"),
+        FieldLenField("locator_count",  0, fmt='B', count_of="locators"),
         ByteField("eid_prefix_length", 0),
         BitEnumField("action", None, 3, _LISP_MAP_REPLY_ACTIONS),
         BitField("authoritative", 0, 1),
@@ -169,12 +169,12 @@ class LISP_MapRequest(Packet):
     name = "LISP Map-Request packet"
     fields_desc = [
         BitField("reserved", 0, 3),
-        # TODO - make sure that the FieldLenField equals 5 bits and not a byte!
+        # TODO - make sure that the FieldLenField equals 5 bits and not a byte! - TODO
         # FieldLenField("itr_rloc_count", 0, fmt='B', count_of="itr_rloc_records"), 
         BitField("itr_rloc_count", 0, 5), 
         FieldLenField("request_count", 0, fmt='B', count_of="request_records"),  
         XLongField("nonce", 0),
-        # below, the source address is listed, this occurs once per packet
+        # below, the source address of the request is listed, this occurs once per packet
         LISP_AFI_Address,
         PacketListField("itr_rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count+1),
         PacketListField("request_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.request_count)
@@ -184,8 +184,8 @@ class LISP_MapReply(Packet):
     """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Reply packet"
     fields_desc = [
-        ByteField("reserved", 0),
-        FieldLenField("map_count", 0, count_of="map_records"),  
+        BitField("reserved", None, 8),
+        FieldLenField("map_count", 0, fmt='B', count_of="map_records"),  
         XLongField("nonce", 0),
         PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.map_count)
     ]
@@ -194,7 +194,7 @@ class LISP_MapRegister(Packet):
     """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Register packet"
     fields_desc = [ 
-        FieldLenField("register_count",  0, count_of="register_records"),
+        FieldLenField("register_count",  0, fmt='B', count_of="register_records"),
         XLongField("nonce", 0),
         ShortField("key_id", 0),
         ShortField("authentication_length", 0),
@@ -209,7 +209,7 @@ class LISP_MapNotify(Packet):
     fields_desc = [
         BitField("reserved", 0, 12),
         ByteField("reserved_fields", 0),
-        FieldLenField("notify_count", None, count_of="notify_records"),
+        FieldLenField("notify_count", None, fmt='B', count_of="notify_records"),
         XLongField("nonce", 0),
         ShortField("key_id", 0),
         ShortField("authentication_length", 0),
