@@ -56,7 +56,7 @@ class LISP_Type(Packet):
 	# register flag fields, with 18 padding bits in between	
 	ConditionalField(FlagsField("register_flags", None, 1, ["proxy_map_reply"]), lambda pkt:pkt.packettype==3),
 	ConditionalField(BitField("p3", 0, 18), lambda pkt:pkt.packettype==3),
-    ConditionalField(FlagsField("register_flags", None, 1, ["want-map-notify"]), lambda pkt:pkt.packettype==3),
+        ConditionalField(FlagsField("register_flags", None, 1, ["want-map-notify"]), lambda pkt:pkt.packettype==3),
 	# notify packet reserved fields
 	ConditionalField(BitField("p4", 0, 12), lambda pkt:pkt.packettype==4),
 	# encapsulated packet flag fields, the flag gets read and passed back to the IP stack (see bindings)	
@@ -64,7 +64,21 @@ class LISP_Type(Packet):
 	ConditionalField(BitField("p8", 0, 27), lambda pkt:pkt.packettype==8)
         ]
 
-""" FIELDS
+class Version(Packet):
+	"""    name = "test if the packet is v4 or v6"
+	    fields_desc = [
+		BitEnumField("ipversion", 0, 4, {4 : 4 , 6 : 6}),
+		BitField("pad", 0, 4)
+	    ]
+	"""
+	def guess_payload_class(self, payload):
+	    if payload[:1] == "\x6e":
+		return IPv6
+	    elif payload[:1] == "\x45":
+		return IP
+
+""" 
+FIELDS
 
     LISPAddressField DESCRIPTION
 
@@ -223,7 +237,6 @@ def sendLIGquery(server, query):
     """ trying to spawn a map request that can be answered by a mapserver """
     return IP(dst=server)/UDP(sport=4342,dport=4342)/LISP_Type()/LISP_MapReply(map_records=LISP_MapRecord(record_ttl=1,eid_prefix_length=28,action=0,authoritative=0,map_version_number=0,eid_prefix_afi=1,eid_prefix='153.16.43.16'))
 
-
 """
 Bind LISP into scapy stack
 
@@ -234,7 +247,6 @@ lisp-data       4341/udp   LISP Data Packets
 lisp-cons       4342/tcp   LISP-CONS Control
 lisp-control    4342/udp   LISP Data-Triggered Control
 """
-
 # tie LISP into the IP/UDP stack
 bind_layers( UDP, LISP_Type, dport=4342 )
 bind_layers( UDP, LISP_Type, sport=4342 )
@@ -242,9 +254,8 @@ bind_layers( LISP_Type, LISP_MapRequest, packettype=1 )
 bind_layers( LISP_Type, LISP_MapReply, packettype=2 )
 bind_layers( LISP_Type, LISP_MapRegister, packettype=3 )
 bind_layers( LISP_Type, LISP_MapNotify, packettype=4 )
-# if an encapsulated packet shows up, rebind to the IP4 or IP6 stack
-#bind_layers( LISP_Type, IP, packettype=8 )
-#bind_layers( LISP_Type, IPv6, packettype=8 )
+# if an encapsulated packet shows up, rebind to the IP4 or IP6 stack - TODO
+bind_layers( LISP_Type, Version, packettype=8 )
 
 """ start scapy shell """
 # debug mode
