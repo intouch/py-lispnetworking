@@ -64,13 +64,9 @@ class LISP_Type(Packet):
 	ConditionalField(BitField("p8", 0, 27), lambda pkt:pkt.packettype==8)
         ]
 
+""" the class below reads the first byte of an unidentified IP4 or IP6 header, after which it picks out the correct one """
+
 class Version(Packet):
-	"""    name = "test if the packet is v4 or v6"
-	    fields_desc = [
-		BitEnumField("ipversion", 0, 4, {4 : 4 , 6 : 6}),
-		BitField("pad", 0, 4)
-	    ]
-	"""
 	def guess_payload_class(self, payload):
 	    if payload[:1] == "\x6e":
 		return IPv6
@@ -78,8 +74,6 @@ class Version(Packet):
 		return IP
 
 """ 
-FIELDS
-
     LISPAddressField DESCRIPTION
 
     Dealing with addresses in LISP context, the packets often contain (afi, address)
