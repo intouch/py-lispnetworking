@@ -195,13 +195,13 @@ class LISP_MapRegister(Packet):
     """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Register packet"
     fields_desc = [ 
-        FieldLenField("register_count",  0, fmt='B', count_of="register_records"),
+        FieldLenField("register_count", 0, fmt='B', count_of="register_records"),
         XLongField("nonce", 0),
         ShortField("key_id", 0),
         ShortField("authentication_length", 0),
         # authentication length expresses itself in bytes, so no modifications needed here
         StrLenField("authentication_data", None, length_from = lambda pkt: pkt.authentication_length),
-        PacketListField("register_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.register__count)
+        PacketListField("register_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.register_count)
     ]
 
 class LISP_MapNotify(Packet):
