@@ -2,7 +2,7 @@
 import scapy
 from scapy import *
 from scapy.all import *
-import socket,struct
+import socket,struct,binascii
 
 """ 
     GENERAL DECLARATIONS
@@ -64,14 +64,14 @@ class LISP_Type(Packet):
 	ConditionalField(BitField("p8", 0, 27), lambda pkt:pkt.packettype==8)
         ]
 
-""" the class below reads the first byte of an unidentified IP4 or IP6 header, after which it picks out the correct one """
+""" the class below reads the first byte of an unidentified IPv4 or IPv6 header. it then checks the first byte of the payload to see if its IPv4 or IPv6 header. the IPv4 header contains a byte to describe the IP version, which is always hex45. IPv6 has a 4 bit header, which is harder to read in scapy """
 
 class Version(Packet):
-	def guess_payload_class(self, payload):
-	    if payload[:1] == "\x6e":
-		return IPv6
-	    elif payload[:1] == "\x45":
-		return IP
+    def guess_payload_class(self, payload):
+        if payload[:1] == "\x45":
+            return IP
+        else:
+            return IPv6
 
 """ 
     LISPAddressField DESCRIPTION
