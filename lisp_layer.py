@@ -180,8 +180,8 @@ class LISP_MapRequest(Packet):
         # Right now we steal 3 extra bits from the reserved fields that are prior to the itr_rloc_records
         #  BitField("reserved", 0, 3), 
         #  BitField("itr_rloc_count", 0, 5), 
-        FieldLenField("itr_rloc_count", 0, fmt='B', count_of="itr_rloc_records"),                          
-        FieldLenField("request_count", 0, fmt='B', count_of="request_records"),  
+        FieldLenField("itr_rloc_count", 0, "itr_rloc_records", "B", count_of="itr_rloc_records"),                          
+        FieldLenField("request_count", 0, "request_records", "B", count_of="request_records"),  
         XLongField("nonce", 0),
         # below, the source address of the request is listed, this occurs once per packet
         LISP_AFI_Address,
@@ -194,16 +194,16 @@ class LISP_MapReply(Packet):
     name = "LISP Map-Reply packet"
     fields_desc = [
         BitField("reserved", None, 8),
-        FieldLenField("map_count", 0, fmt='B', count_of="map_records"),  
+        FieldLenField("map_count", None, "map_records", "B", count_of="map_records", adjust=lambda pkt,x:x/16 - 1),  
         XLongField("nonce", 0),
-        PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.map_count)
+        PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt:pkt.map_count + 1)
     ]
 
 class LISP_MapRegister(Packet):
     """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Register packet"
     fields_desc = [ 
-        FieldLenField("register_count", 0, fmt='B', count_of="register_records"),
+        FieldLenField("register_count", None, "register_records", "B", count_of="register_records"),
         XLongField("nonce", 0),
         ShortField("key_id", 0),
         ShortField("authentication_length", 0),
@@ -218,7 +218,7 @@ class LISP_MapNotify(Packet):
     fields_desc = [
         BitField("reserved", 0, 12),
         ByteField("reserved_fields", 0),
-        FieldLenField("notify_count", None, fmt='B', count_of="notify_records"),
+        FieldLenField("notify_count", None, "notify_records", "B", count_of="notify_records"),
         XLongField("nonce", 0),
         ShortField("key_id", 0),
         ShortField("authentication_length", 0),
@@ -229,7 +229,7 @@ class LISP_MapNotify(Packet):
 
 def sendLIGquery(server, query):
     """ trying to spawn a map request that can be answered by a mapserver """
-    return IP(dst=server)/UDP(sport=4342,dport=4342)/LISP_Type()/LISP_MapReply(map_records=LISP_MapRecord(record_ttl=1,eid_prefix_length=28,action=0,authoritative=0,map_version_number=0,eid_prefix_afi=1,eid_prefix='153.16.43.16'))
+    return IP(dst=server)/UDP(sport=4342,dport=4342)/LISP_Type()/LISP_MapReply(map_records=LISP_MapRecord(record_ttl=1,eid_prefix_length=28,action=0,authoritative=0,map_version_number=0,eid_prefix_afi=1,eid_prefix='153.16.43.16')*2)
 
 """
 Bind LISP into scapy stack
