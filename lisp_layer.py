@@ -50,7 +50,7 @@ class LISP_Type(Packet):
 	    # register flag fields, with 18 padding bits in between	
 	ConditionalField(FlagsField("register_flags", None, 1, ["proxy_map_reply"]), lambda pkt:pkt.packettype==3),
 	ConditionalField(BitField("p3", 0, 18), lambda pkt:pkt.packettype==3),
-    ConditionalField(FlagsField("register_flags", None, 1, ["want-map-notify"]), lambda pkt:pkt.packettype==3),
+    	ConditionalField(FlagsField("register_flags", None, 1, ["want-map-notify"]), lambda pkt:pkt.packettype==3),
 	    # notify packet reserved fields
 	ConditionalField(BitField("p4", 0, 12), lambda pkt:pkt.packettype==4),
 	    # encapsulated packet flag fields, the flag gets read and passed back to the IP stack (see bindings)	
@@ -148,12 +148,12 @@ class LISP_MapRequestRecord(Packet):
     name= "LISP Map-Request Record"
     fields_desc = [
         ByteField("reserved", 0),
-        # eid mask length
+	        # eid mask length
         ByteField("eid_mask_len", 0),
-        # eid prefix afi
+        	# eid prefix afi
         ShortField("eid_afi", 0),
-        # eid prefix information + afi
-        LISP_AddressField("eid_prefix_afi", "eid_prefix_address")
+	        # eid prefix information + afi
+        LISP_AddressField("eid_afi", "eid_prefix")
     ]
    
     def extract_padding(self, s):
@@ -171,7 +171,7 @@ class LISP_MapRequest(Packet):
         XLongField("nonce", 0),
             # below, the source address of the request is listed, this occurs once per packet
         LISP_AFI_Address,
-        PacketListField("itr_rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_counti + 1),
+        PacketListField("itr_rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count + 1),
         PacketListField("request_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.request_count + 1) 
     ]
 
@@ -221,7 +221,6 @@ def sendLIGquery():
 Bind LISP into scapy stack
 
 According to http://www.iana.org/assignments/port-numbers :
-
 lisp-data       4341/tcp   LISP Data Packets
 lisp-data       4341/udp   LISP Data Packets
 lisp-cons       4342/tcp   LISP-CONS Control
