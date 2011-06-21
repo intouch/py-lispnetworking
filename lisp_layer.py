@@ -143,7 +143,7 @@ class LISP_MapRecord(Packet):
     def extract_padding(self, s):
         return "", s
 
-""" Map Request, page 25, paragraph 6.1.2, the 'REC', appears N times depending on record count """
+""" Map Request RECORD, page 25, paragraph 6.1.2, the 'REC', appears N times depending on record count """
 class LISP_MapRequestRecord(Packet):
     name= "LISP Map-Request Record"
     fields_desc = [
@@ -171,8 +171,8 @@ class LISP_MapRequest(Packet):
         XLongField("nonce", 0),
             # below, the source address of the request is listed, this occurs once per packet
         LISP_AFI_Address,
-        PacketListField("itr_rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count+1),
-        PacketListField("request_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.request_count+1) 
+        PacketListField("itr_rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_counti + 1),
+        PacketListField("request_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.request_count + 1) 
     ]
 
 class LISP_MapReply(Packet):                                                    
@@ -214,8 +214,8 @@ class LISP_MapNotify(Packet):
     ]
 
 def sendLIGquery():
-    """ trying to spawn a map request that can be answered by a mapserver """
-    return IP()/UDP(sport=4342,dport=4342)/LISP_Type()/LISP_MapRequest(itr_rloc_records=LISP_AFI_Address(afi=4, address='127.0.0.1'),request_records=LISP_MapRequestRecord(ttl=1, eid_prefix_length='28', action=0, authoritative=0, map_version_number=0, eid_prefix_afi=1, eid_prefix='153.16.43.16'))
+    """ trying to spawn a map request that can be answered by a mapserver """ """ WIP """
+    return IP()/UDP(sport=4342,dport=4342)/LISP_Type()/LISP_MapRequest()
 
 """
 Bind LISP into scapy stack
