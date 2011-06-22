@@ -98,13 +98,13 @@ class LISP_AddressField(Field):
             return self._ip_field.getfield(pkt,s)
         elif getattr(pkt, self.fld_name) == _AFI["ipv6"]:
             return self._ip6_field.getfield(pkt,s)
-    
+
     def addfield(self, pkt, s, val):
         if getattr(pkt, self.fld_name) == _AFI["ipv4"]:
             return self._ip_field.addfield(pkt, s, val)
         elif getattr(pkt, self.fld_name) == _AFI["ipv6"]: 
             return self._ip6_field.addfield(pkt, s, val)
-
+            
 """RECORD FIELDS, PART OF THE REPLY, REQUEST, NOTIFY OR REGISTER PACKET CLASSES"""
 
 """ LISP Address Field, used multiple times whenever an AFI determines the length of the IP field. for example, IPv4 requires 32 bits of storage while IPv6 needs 128 bits. This field can easily be extended once new LISP LCAF formats are needed, see the LISP_AddressField class for this. """
@@ -127,7 +127,7 @@ class LISP_Locator_Record(Packet):
         ByteField("multicast_priority", 0),
         ByteField("multicast_weight", 0),
         BitField("reserved", 0, 13),
-        FlagsField("locator_flags", None, 3, ["local_locator", "probe", "route"]), 
+        FlagsField("locator_flags", 0, 3, ["local_locator", "probe", "route"]), 
         ShortField("locator_afi", 0),
         LISP_AddressField("locator_afi", "locator_address")
     ]
@@ -139,17 +139,18 @@ class LISP_Locator_Record(Packet):
 """ Map Reply RECORD, page 28, paragraph 6.1.4, the RECORD appears N times dependant on Record Count """
 class LISP_MapRecord(Packet):
     name = "LISP Map-Reply Record"
+    overload_fields = { LISP_Type: { "eid_prefix_afi":1, "eid_prefix":'192.168.1.1' }}
     fields_desc = [
         BitField("record_ttl", 0, 32),
         FieldLenField("locator_count",  0, "locators", "B", count_of="locators"),
         ByteField("eid_prefix_length", 0),
-        BitEnumField("action", None, 3, _LISP_MAP_REPLY_ACTIONS),
+        BitEnumField("action", 0, 3, _LISP_MAP_REPLY_ACTIONS),
         BitField("authoritative", 0, 1),
         BitField("reserved", 0, 16),
         BitField("map_version_number", 0, 12),
-        ShortField("eid_prefix_afi", 0),
-        LISP_AddressField("eid_prefix_afi", "eid_prefix"),
-        PacketListField("locators", None, LISP_Locator_Record, count_from=lambda pkt: pkt.locator_count),
+        ShortField("record_afi", 0),
+        LISP_AddressField("record_afi", "record_address"),
+        PacketListField("locators", None, LISP_Locator_Record, count_from=lambda pkt: pkt.locator_count)
     ]
 
     # delimits the packet, so that the remaining records are not contained as 'raw' payloads
@@ -164,9 +165,9 @@ class LISP_MapRequestRecord(Packet):
 	        # eid mask length
         ByteField("eid_mask_len", 0),
         	# eid prefix afi
-        ShortField("eid_afi", 0),
+        ShortField("request_afi", 0),
 	        # eid prefix information + afi
-        LISP_AddressField("eid_afi", "eid_prefix")
+        LISP_AddressField("request_afi", "request_address")
     ]
    
     def extract_padding(self, s):
@@ -183,7 +184,9 @@ class LISP_MapRequest(Packet):
         FieldLenField("request_count", 0, "request_records", "B", count_of="request_records"),  
         XLongField("nonce", 0),
             # below, the source address of the request is listed, this occurs once per packet
-        LISP_AFI_Address,
+        ByteField("source_afi", 1),
+        # the LISP IP address field is conditional, because it is absent if the AFI is set to 0 - TODO
+        ConditionalField(LISP_AddressField("source_afi", "source_address"), lambda pkt:pkt.source_afi != 0),
         PacketListField("itr_rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count + 1),
         PacketListField("request_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.request_count + 1) 
     ]
@@ -192,10 +195,10 @@ class LISP_MapReply(Packet):
     """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Reply packet"
     fields_desc = [
-        BitField("reserved", None, 8),
-        FieldLenField("map_count", None, "map_records", "B", count_of="map_records", adjust=lambda pkt,x:x/16 - 1),  
+        BitField("reserved", 0, 8),
+        FieldLenField("map_count", 0, "map_records", "B", count_of="map_records", adjust=lambda pkt,x:x/16 - 1),  
         XLongField("nonce", 0),
-        PacketListField("map_records", None, LISP_MapRecord, count_from=lambda pkt:pkt.map_count + 1)
+        PacketListField("map_records", 0, LISP_MapRecord, count_from=lambda pkt:pkt.map_count + 1)
     ]
 
 class LISP_MapRegister(Packet):
