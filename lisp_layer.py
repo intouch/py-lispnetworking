@@ -11,8 +11,7 @@
     archive for more details.
 """
 
-
-import scapy,socket,struct
+import scapy,socket,struct,binascii
 from scapy import *
 from scapy.all import *
 
@@ -49,9 +48,10 @@ scapy is designed to read out bytes before it can call another class. we are usi
 
 class LISP_Type(Packet):
     
-    def guess_payload_class(self, payload):
-   
+    def guess_payload_class(self, payload, lisptype, binstring):
         lisptype = payload[:1]
+        binstring = binascii.hexlify(lisptype)
+        r = []
 
         if lisptype == "\x10":
             return LISP_MapRequest       
