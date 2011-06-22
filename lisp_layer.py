@@ -47,33 +47,32 @@ _AFI = {
 """CLASS TO DETERMINE WHICH PACKET TYPE TO INTERPRET
 scapy is designed to read out bytes before it can call another class. we are using the ugly conditional construction you see below to circumvent this, since all classes must have the length of one or more bytes. improving and making this prettier is still on the TODO list """
 
-
 class LISP_Type(Packet):
-    """ first part of any lisp packet, in this class we also look at which flags are set
-    because scapy demands certain bit alignment. A class must contain N times 8 bit, in our case 16. """
-    name = "LISP packet type and flags"
-    fields_desc = [
-    BitEnumField("packettype", 0, 4, _LISP_TYPES),
-    	# request flag fields, followed by 6 pad fields
-	ConditionalField(FlagsField("request_flags", None, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]), lambda pkt:pkt.packettype==1),
-	ConditionalField(BitField("p1", 0, 6), lambda pkt:pkt.packettype==1),
-	    # reply flag fields, followed by 9 padding bits
-	ConditionalField(FlagsField("reply_flags", None, 3, ["probe", "echo_nonce_alg", "security" ]), lambda pkt:pkt.packettype==2),
-	ConditionalField(BitField("p2", 0, 9), lambda pkt:pkt.packettype==2),
-	    # register flag fields, with 18 padding bits in between	
-	ConditionalField(FlagsField("register_flags", None, 1, ["proxy_map_reply"]), lambda pkt:pkt.packettype==3),
-	ConditionalField(BitField("p3", 0, 18), lambda pkt:pkt.packettype==3),
-    	ConditionalField(FlagsField("register_flags", None, 1, ["want-map-notify"]), lambda pkt:pkt.packettype==3),
-	    # notify packet reserved fields
-	ConditionalField(BitField("p4", 0, 12), lambda pkt:pkt.packettype==4),
-	    # encapsulated packet flag fields, the flag gets read and passed back to the IP stack (see bindings)	
-	ConditionalField(FlagsField("ecm_flags", None, 1, ["security"]), lambda pkt:pkt.packettype==8),
-	ConditionalField(BitField("p8", 0, 27), lambda pkt:pkt.packettype==8)
-        ]
+    
+    def guess_payload_class(self, payload):
+    
+	b = [ 10, 20, 30, 80 ]
+	for i in b:
+		c = b
+		for i in range(c,c+10):
+		    li.insert "\\x"+str(i)
+    
+        lisptype = payload[:1]
+        
+        if lisptype == "\x10":
+            return LISP_MapRequest      
+        elif lisptype == "\x20":
+            return LISP_MapReply
+        elif lisptype == "\x30":
+            return LISP_MapRegister
+        elif lisptype == "\x80":
+            return LISP_Encapsulated_Control_Message
+        else:
+            return payload
 
 """ the class below reads the first byte of an unidentified IPv4 or IPv6 header. it then checks the first byte of the payload to see if its IPv4 or IPv6 header. the IPv4 header contains a byte to describe the IP version, which is always hex45. IPv6 has a 4 bit header, which is harder to read in scapy. maybe this can be done in a prettier way - TODO """
 
-class Version(Packet):
+class IPVersion(Packet):
     def guess_payload_class(self, payload):
         if payload[:1] == "\x45":
             return IP
@@ -140,7 +139,6 @@ class LISP_Locator_Record(Packet):
 """ Map Reply RECORD, page 28, paragraph 6.1.4, the RECORD appears N times dependant on Record Count """
 class LISP_MapRecord(Packet):
     name = "LISP Map-Reply Record"
-    overload_fields = { LISP_Type: { "eid_prefix_afi":1, "eid_prefix":'192.168.1.1' }}
     fields_desc = [
         BitField("record_ttl", 0, 32),
         FieldLenField("locator_count",  0, "locators", "B", count_of="locators"),
@@ -180,13 +178,16 @@ class LISP_MapRequest(Packet):
     """ map request part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Request packet"
     fields_desc = [
+        BitField("type", 0, 4),
+        FlagsField("request_flags", None, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
+        BitField("p1", 0, 6),
             # Right now we steal 3 extra bits from the reserved fields that are prior to the itr_rloc_records
         FieldLenField("itr_rloc_count", 0, "itr_rloc_records", "B", count_of="itr_rloc_records", adjust=lambda pkt,x:x + 1),                          
         FieldLenField("request_count", 0, "request_records", "B", count_of="request_records", adjust=lambda pkt,x:x + 1),  
         XLongField("nonce", 0),
             # below, the source address of the request is listed, this occurs once per packet
         ShortField("source_afi", 0),
-        # the LISP IP address field is conditional, because it is absent if the AFI is set to 0 - TODO
+            # the LISP IP address field is conditional, because it is absent if the AFI is set to 0 - TODO
         ConditionalField(LISP_AddressField("source_afi", "source_address"), lambda pkt:pkt.source_afi != 0),
         PacketListField("itr_rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count + 1),
         PacketListField("request_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.request_count + 1) 
@@ -196,6 +197,9 @@ class LISP_MapReply(Packet):
     """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Reply packet"
     fields_desc = [
+        BitField("type", 0, 4),
+        FlagsField("reply_flags", None, 3, ["probe", "echo_nonce_alg", "security" ]),
+        BitField("p2", 0, 9),        
         BitField("reserved", 0, 8),
         FieldLenField("map_count", 0, "map_records", "B", count_of="map_records", adjust=lambda pkt,x:x/16 - 1),  
         XLongField("nonce", 0),
@@ -206,6 +210,9 @@ class LISP_MapRegister(Packet):
     """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Register packet"
     fields_desc = [ 
+        BitField("type", 0, 4),
+        FlagsField("register_flags", None, 1, ["proxy_map_reply"]),
+        BitField("p3", 0, 18), 
         FieldLenField("register_count", None, "register_records", "B", count_of="register_records", adjust=lambda pkt,x:x/16 - 1),
         XLongField("nonce", 0),
         ShortField("key_id", 0),
@@ -219,6 +226,7 @@ class LISP_MapNotify(Packet):
     """ map notify part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Notify packet"
     fields_desc = [
+        BitField("type", 0, 4),
         BitField("reserved", 0, 12),
         ByteField("reserved_fields", 0),
         FieldLenField("notify_count", None, "notify_records", "B", count_of="notify_records"),
@@ -228,6 +236,14 @@ class LISP_MapNotify(Packet):
             # authentication length expresses itself in bytes, so no modifications needed here
         StrLenField("authentication_data", None, length_from = lambda pkt: pkt.authentication_length),
         PacketListField("notify_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.notify_count)
+    ]
+
+class LISP_Encapsulated_Control_Message(Packet):
+    name = "LISP Encapsulated Control Message packet"
+    fields_desc = [
+        BitField("type", 0, 4),	
+	FlagsField("ecm_flags", None, 1, ["security"]),
+	BitField("p8", 0, 27) 
     ]
 
 def sendLIGquery():
@@ -247,12 +263,7 @@ lisp-control    4342/udp   LISP Data-Triggered Control
     # tie LISP into the IP/UDP stack
 bind_layers( UDP, LISP_Type, dport=4342 )
 bind_layers( UDP, LISP_Type, sport=4342 )
-bind_layers( LISP_Type, LISP_MapRequest, packettype=1 )
-bind_layers( LISP_Type, LISP_MapReply, packettype=2 )
-bind_layers( LISP_Type, LISP_MapRegister, packettype=3 )
-bind_layers( LISP_Type, LISP_MapNotify, packettype=4 )
-    # if an encapsulated packet shows up, rebind to the IP4 or IP6 stack - TODO
-bind_layers( LISP_Type, Version, packettype=8 )
+bind_layers( LISP_Encapsulated_Control_Message, IPVersion, )
 
 """ start scapy shell """
     # debug mode
