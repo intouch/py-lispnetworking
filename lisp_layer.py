@@ -49,11 +49,11 @@ scapy is designed to read out bytes before it can call another class. we are usi
 class LISP_Type(Packet):
     
     def guess_payload_class(self, payload, lisptype, binstring):
-        lisptype = payload[:1]
-        binstring = binascii.hexlify(lisptype)
-        r = []
+        a = payload[:1]
+        b = struct.unpack("B", a)
+        c = b[0] >> 4
 
-        if lisptype == "\x10":
+        if c == 8:
             return LISP_MapRequest       
         elif lisptype == "\x20":
             return LISP_MapReply
