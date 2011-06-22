@@ -17,7 +17,7 @@ This software aims to help encode and decode LISP control-plane packets.
 
 It adheres to the following Internet Drafts:
 
-    - http://tools.ietf.org/html/draft-ietf-lisp-12
+    - http://tools.ietf.org/html/draft-ietf-lisp-13
     - http://tools.ietf.org/html/draft-farinacci-lisp-lcaf-05
 
 For more information about LISP please visit the following websites:
