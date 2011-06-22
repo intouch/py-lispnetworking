@@ -30,4 +30,12 @@ For more information about LISP please visit the following websites:
 This software is based on scapy.
 
 See the INSTALL file for information how to setup a virtualenv and play with the
-various things that py-lispnetworking can do for you. 
+various things that py-lispnetworking can do for you.
+
+Copyright (C) 2011 Marek Kuczynski <marek@intouch.eu>
+Copyright (C) 2011 Job Snijders <job@intouch.eu>
+
+This file is subject to the terms and conditions of the GNU General
+Public License. See the file COPYING in the main directory of this
+archive for more details.
+ 
