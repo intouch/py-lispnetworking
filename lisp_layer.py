@@ -48,22 +48,25 @@ scapy is designed to read out bytes before it can call another class. we are usi
 
 class LISP_Type(Packet):
     
-    def guess_payload_class(self, payload, lisptype, binstring):
+    def guess_payload_class(self, payload):
+        lisptype = payload[:1]
         a = payload[:1]
         b = struct.unpack("B", a)
         c = b[0] >> 4
 
-        if c == 8:
+        if c == 3:
             return LISP_MapRequest       
-        elif lisptype == "\x20":
+        elif c == 1:
+            return LISP_MapRequest      
+        elif c == 2:
             return LISP_MapReply
-        elif lisptype == "\x30":
+        elif c == 3:
             return LISP_MapRegister
-        elif lisptype == "\x80":
+        elif c == 8:
             return LISP_Encapsulated_Control_Message
         else:
-            return payload 
-
+            return payload
+    
 """ the class below reads the first byte of an unidentified IPv4 or IPv6 header. it then checks the first byte of the payload to see if its IPv4 or IPv6 header. the IPv4 header contains a byte to describe the IP version, which is always hex45. IPv6 has a 4 bit header, which is harder to read in scapy. maybe this can be done in a prettier way - TODO """
 
 class IPVersion(Packet):
