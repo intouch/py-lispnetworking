@@ -38,7 +38,7 @@ _AFI = {
     """ An AFI value of 0 used in this specification indicates an unspecified encoded address where the length of the address is 0 bytes following the 16-bit AFI value of 0. See the following URL for the other values:
     http://www.iana.org/assignments/address-family-numbers/address-family-numbers.xml """
 
-    "notpresent" : 0,
+    "zero" : 0,
     "ipv4" : 1,
     "ipv6" : 2,
     "lcaf" : 16387 
@@ -111,9 +111,10 @@ class LISP_AddressField(Field):
 class LISP_AFI_Address(Packet):                     # used for 4 byte fields that contain a AFI and a v4 or v6 address
     name = "ITR RLOC Address"
     fields_desc = [
-        ShortField("afi", 0),                       # read out the AFI
-        ConditionalField(LISP_AddressField("afi", "address"), lambda pkt:pkt.afi!=0)
+        ShortField("lispafi", 0),
+        LISP_AddressField("lispafi", "lispaddress")
     ]
+
 
     def extract_padding(self, s):
         return "", s
@@ -180,13 +181,14 @@ class LISP_MapRequest(Packet):
     name = "LISP Map-Request packet"
     fields_desc = [
             # Right now we steal 3 extra bits from the reserved fields that are prior to the itr_rloc_records
-        FieldLenField("itr_rloc_count", 0, "itr_rloc_records", "B", count_of="itr_rloc_records"),                          
-        FieldLenField("request_count", 0, "request_records", "B", count_of="request_records"),  
+        FieldLenField("itr_rloc_count", 0, "itr_rloc_records", "B", count_of="itr_rloc_records", adjust=lambda pkt,x:x + 1),                          
+        FieldLenField("request_count", 0, "request_records", "B", count_of="request_records", adjust=lambda pkt,x:x + 1),  
         XLongField("nonce", 0),
             # below, the source address of the request is listed, this occurs once per packet
         ByteField("source_afi", 1),
         # the LISP IP address field is conditional, because it is absent if the AFI is set to 0 - TODO
         ConditionalField(LISP_AddressField("source_afi", "source_address"), lambda pkt:pkt.source_afi != 0),
+        ConditionalField(ByteField("padding", 0), lambda pkt:pkt.source_afi == 0),
         PacketListField("itr_rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count + 1),
         PacketListField("request_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.request_count + 1) 
     ]
