@@ -53,7 +53,7 @@ class LISP_Type(Packet):
    
         lisptype = payload[:1]
 
-        if lisptype.startswith('\x00'):
+        if lisptype == "\x10":
             return LISP_MapRequest       
         elif lisptype == "\x20":
             return LISP_MapReply
