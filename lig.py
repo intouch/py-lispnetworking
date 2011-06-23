@@ -10,7 +10,13 @@
     Public License. See the file COPYING in the main directory of this
     archive for more details.
 """
-
+from lisp_layer import *
+from scapy import *
+from scapy.all import *
 import sys, pprint, random, socket, struct
 from optparse import OptionParser
 
+
+""" start shell """
+if __name__ == "__main__":
+        interact(mydict=globals())

@@ -116,7 +116,7 @@ class LISP_AddressField(Field):
 class LISP_AFI_Address(Packet):                     # used for 4 byte fields that contain a AFI and a v4 or v6 address
     name = "ITR RLOC Address"
     fields_desc = [
-        ShortField("afi", int(0)),
+        ShortField("afi", int(1)),
         LISP_AddressField("afi", "address")
     ]
 
@@ -187,15 +187,15 @@ class LISP_MapRequest(Packet):
         FlagsField("request_flags", None, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
         BitField("p1", 0, 6),
             # Right now we steal 3 extra bits from the reserved fields that are prior to the itr_rloc_records
-        FieldLenField("itr_rloc_count", 0, "itr_rloc_records", "B", count_of="itr_rloc_records", adjust=lambda pkt,x:x + 1),                          
-        FieldLenField("request_count", 0, "request_records", "B", count_of="request_records", adjust=lambda pkt,x:x + 1),  
+        FieldLenField("itr_rloc_count", None, "itr_rloc_records", "B", count_of="itr_rloc_records", adjust=lambda pkt,x:x / 6 - 1),                          
+        FieldLenField("request_count", None, "request_records", "B", count_of="request_records", adjust=lambda pkt,x:x / 8),  
         XLongField("nonce", 0),
             # below, the source address of the request is listed, this occurs once per packet
         ShortField("request_afi", int(1)),
             # the LISP IP address field is conditional, because it is absent if the AFI is set to 0 - TODO
-        ConditionalField(LISP_AddressField("request_afi", "address"), lambda pkt:pkt.source_afi != 0),
+        ConditionalField(LISP_AddressField("request_afi", "address"), lambda pkt:pkt.request_afi != 0),
         PacketListField("itr_rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count + 1),
-        PacketListField("request_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.request_count + 1) 
+        PacketListField("request_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.request_count) 
     ]
 
 class LISP_MapReply(Packet):                                                    
@@ -219,7 +219,7 @@ class LISP_MapRegister(Packet):
         FlagsField("register_flags", None, 1, ["proxy_map_reply"]),
         BitField("p3", 0, 18), 
         FlagsField("register_flags", None, 1, ["want-map-notify"]),
-        FieldLenField("register_count", None, "register_records", "B", count_of="register_records", adjust=lambda pkt,x:x/16 - 1),
+        FieldLenField("register_count", None, "register_records", "B", count_of="register_records", adjust=lambda pkt,x:x / 16 - 1),
         XLongField("nonce", 0),
         ShortField("key_id", 0),
         ShortField("authentication_length", 0),
@@ -256,15 +256,13 @@ def sendLIGquery():
     """ trying to spawn a map request that can be answered by a mapserver """ """ WIP """
     return IP()/UDP(sport=4342,dport=4342)/LISP_Type()/LISP_MapRequest()
 
-"""
-Bind LISP into scapy stack
-
-According to http://www.iana.org/assignments/port-numbers :
-lisp-data       4341/tcp   LISP Data Packets
-lisp-data       4341/udp   LISP Data Packets
-lisp-cons       4342/tcp   LISP-CONS Control
-lisp-control    4342/udp   LISP Data-Triggered Control
-"""
+    """ Bind LISP into scapy stack
+    
+    According to http://www.iana.org/assignments/port-numbers :
+    lisp-data       4341/tcp   LISP Data Packets
+    lisp-data       4341/udp   LISP Data Packets
+    lisp-cons       4342/tcp   LISP-CONS Control
+    lisp-control    4342/udp   LISP Data-Triggered Control """
 
     # tie LISP into the IP/UDP stack
 bind_layers( UDP, LISP_Type, dport=4342 )
