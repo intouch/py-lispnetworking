@@ -48,13 +48,13 @@ scapy is designed to read out bytes before it can call another class. we are usi
 
 class LISP_Type(Packet):
     def guess_payload_class(self, payload):
-        	# read the payload (non interpreted part of the packet string) into a variable
-	a = payload[:1]
+       	# read the payload (non interpreted part of the packet string) into a variable
+    	a = payload[:1]
 		# put the hex from the packet remainder into an attribute
         b = struct.unpack("B", a)
 		# shift the value from the attribute for 4 bits, so that we have only the 4 bit type value that we care about in the form of a byte. this means that flags are not taken into account in this value, which makes enumeration much cleaner and easier.
         c = b[0] >> 4
-			
+		
 		# compare the integer from the value to the packettype and continue to the correct class
         if c == 1:
             return LISP_MapRequest      
@@ -66,6 +66,7 @@ class LISP_Type(Packet):
             return LISP_Encapsulated_Control_Message
         else:
             return payload
+
     
 """ the class below reads the first byte of an unidentified IPv4 or IPv6 header. it then checks the first byte of the payload to see if its IPv4 or IPv6 header. the IPv4 header contains a byte to describe the IP version, which is always hex45. IPv6 has a 4 bit header, which is harder to read in scapy. maybe this can be done in a prettier way - TODO """
 
@@ -79,10 +80,10 @@ class IPVersion(Packet):
             return IP
         elif c == 6:
             return IPv6
-	elif c == 16387:
-	    print "LCAF, WIP"
-	else:
-	    return payload
+        elif c == 16387:
+	        print "LCAF, WIP"
+        else:
+	        return payload
 
 """ 
     LISPAddressField, Dealing with addresses in LISP context, the packets often contain (afi, address) where the afi decides the length of the address (0, 32 or 128 bit). LISPAddressField will parse an IPField or an IP6Field depending on the value of the AFI field. 
@@ -218,6 +219,7 @@ class LISP_MapRegister(Packet):
         BitField("type", 0, 4),
         FlagsField("register_flags", None, 1, ["proxy_map_reply"]),
         BitField("p3", 0, 18), 
+        FlagsField("register_flags", None, 1, ["want-map-notify"]),
         FieldLenField("register_count", None, "register_records", "B", count_of="register_records", adjust=lambda pkt,x:x/16 - 1),
         XLongField("nonce", 0),
         ShortField("key_id", 0),
