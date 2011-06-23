@@ -16,6 +16,9 @@ from scapy.all import *
 import sys, pprint, random, socket, struct
 from optparse import OptionParser
 
+def createQuery(query, destination):
+    return IP(dst=destination)/UDP(sport=4342,dport=4342)/LISP_MapRequest(type=1,itr_rloc_records=[LISP_AFI_Address(address=destination)],request_records=[LISP_MapRequestRecord(request_address=query)])
+
 
 """ start shell """
 if __name__ == "__main__":

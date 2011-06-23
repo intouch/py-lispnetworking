@@ -192,7 +192,7 @@ class LISP_MapRequest(Packet):
         XLongField("nonce", 0),
             # below, the source address of the request is listed, this occurs once per packet
         ShortField("request_afi", int(1)),
-            # the LISP IP address field is conditional, because it is absent if the AFI is set to 0 - TODO
+            # the LISP IP address field is conditional, because it is absent if the AFI is set to 0
         ConditionalField(LISP_AddressField("request_afi", "address"), lambda pkt:pkt.request_afi != 0),
         PacketListField("itr_rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count + 1),
         PacketListField("request_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.request_count) 
