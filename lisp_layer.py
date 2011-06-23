@@ -146,7 +146,7 @@ class LISP_MapRecord(Packet):
     name = "LISP Map-Reply Record"
     fields_desc = [
         BitField("record_ttl", 0, 32),
-        FieldLenField("locator_count",  0, "locators", "B", count_of="locators"),
+        FieldLenField("locator_count",  None, "locators", "B", count_of="locators", adjust=lambda pkt,x:x/12),
         ByteField("eid_prefix_length", 0),
         BitEnumField("action", 0, 3, _LISP_MAP_REPLY_ACTIONS),
         BitField("authoritative", 0, 1),
@@ -154,7 +154,7 @@ class LISP_MapRecord(Packet):
         BitField("map_version_number", 0, 12),
         ShortField("record_afi", int(1)),
         LISP_AddressField("record_afi", "record_address"),
-        PacketListField("locators", None, LISP_Locator_Record, count_from=lambda pkt: pkt.locator_count)
+        PacketListField("locators", None, LISP_Locator_Record, count_from=lambda pkt: pkt.locator_count + 1)
     ]
 
     # delimits the packet, so that the remaining records are not contained as 'raw' payloads
