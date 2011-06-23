@@ -116,10 +116,9 @@ class LISP_AddressField(Field):
 class LISP_AFI_Address(Packet):                     # used for 4 byte fields that contain a AFI and a v4 or v6 address
     name = "ITR RLOC Address"
     fields_desc = [
-        ShortField("lispafi", 0),
-        LISP_AddressField("lispafi", "lispaddress")
+        ShortField("afi", int(0)),
+        LISP_AddressField("afi", "address")
     ]
-
 
     def extract_padding(self, s):
         return "", s
@@ -132,10 +131,10 @@ class LISP_Locator_Record(Packet):
         ByteField("weight", 0),
         ByteField("multicast_priority", 0),
         ByteField("multicast_weight", 0),
-        BitField("reserved", 0, 13),
+        BitField("reserved", 0, 13), 
         FlagsField("locator_flags", 0, 3, ["local_locator", "probe", "route"]), 
-        ShortField("locator_afi", 0),
-        LISP_AddressField("locator_afi", "locator_address")
+        ShortField("locator_afi", int(1)),
+        LISP_AddressField("locator_afi", "address")
     ]
 
     # delimits the packet, so that the remaining records are not contained as 'raw' payloads 
@@ -153,7 +152,7 @@ class LISP_MapRecord(Packet):
         BitField("authoritative", 0, 1),
         BitField("reserved", 0, 16),
         BitField("map_version_number", 0, 12),
-        ShortField("record_afi", 0),
+        ShortField("record_afi", int(1)),
         LISP_AddressField("record_afi", "record_address"),
         PacketListField("locators", None, LISP_Locator_Record, count_from=lambda pkt: pkt.locator_count)
     ]
@@ -170,7 +169,7 @@ class LISP_MapRequestRecord(Packet):
 	        # eid mask length
         ByteField("eid_mask_len", 0),
         	# eid prefix afi
-        ShortField("request_afi", 0),
+        ShortField("request_afi", int(1)),
 	        # eid prefix information + afi
         LISP_AddressField("request_afi", "request_address")
     ]
@@ -192,9 +191,9 @@ class LISP_MapRequest(Packet):
         FieldLenField("request_count", 0, "request_records", "B", count_of="request_records", adjust=lambda pkt,x:x + 1),  
         XLongField("nonce", 0),
             # below, the source address of the request is listed, this occurs once per packet
-        ShortField("source_afi", 0),
+        ShortField("request_afi", int(1)),
             # the LISP IP address field is conditional, because it is absent if the AFI is set to 0 - TODO
-        ConditionalField(LISP_AddressField("source_afi", "source_address"), lambda pkt:pkt.source_afi != 0),
+        ConditionalField(LISP_AddressField("request_afi", "address"), lambda pkt:pkt.source_afi != 0),
         PacketListField("itr_rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count + 1),
         PacketListField("request_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.request_count + 1) 
     ]
@@ -249,8 +248,8 @@ class LISP_Encapsulated_Control_Message(Packet):
     name = "LISP Encapsulated Control Message packet"
     fields_desc = [
         BitField("type", 0, 4),	
-	FlagsField("ecm_flags", None, 1, ["security"]),
-	BitField("p8", 0, 27) 
+    	FlagsField("ecm_flags", None, 1, ["security"]),
+    	BitField("p8", 0, 27) 
     ]
 
 def sendLIGquery():
@@ -273,6 +272,5 @@ bind_layers( UDP, LISP_Type, sport=4342 )
 bind_layers( LISP_Encapsulated_Control_Message, IPVersion, )
 
 """ start scapy shell """
-    # debug mode
 if __name__ == "__main__":
     interact(mydict=globals(), mybanner="lisp debug")
