@@ -47,16 +47,16 @@ _AFI = {
 scapy is designed to read out bytes before it can call another class. we are using the ugly conditional construction you see below to circumvent this, since all classes must have the length of one or more bytes. improving and making this prettier is still on the TODO list """
 
 class LISP_Type(Packet):
-    
     def guess_payload_class(self, payload):
-        lisptype = payload[:1]
-        a = payload[:1]
+        	# read the payload (non interpreted part of the packet string) into a variable
+	a = payload[:1]
+		# put the hex from the packet remainder into an attribute
         b = struct.unpack("B", a)
+		# shift the value from the attribute for 4 bits, so that we have only the 4 bit type value that we care about in the form of a byte. this means that flags are not taken into account in this value, which makes enumeration much cleaner and easier.
         c = b[0] >> 4
-
-        if c == 3:
-            return LISP_MapRequest       
-        elif c == 1:
+			
+		# compare the integer from the value to the packettype and continue to the correct class
+        if c == 1:
             return LISP_MapRequest      
         elif c == 2:
             return LISP_MapReply
@@ -71,10 +71,18 @@ class LISP_Type(Packet):
 
 class IPVersion(Packet):
     def guess_payload_class(self, payload):
-        if payload[:1] == "\x45":
+	a = payload[:1]
+        b = struct.unpack("B", a)
+        c = b[0] >> 4
+
+        if c == 4:
             return IP
-        else:
+        elif c == 6:
             return IPv6
+	elif c == 16387:
+	    print "LCAF, WIP"
+	else:
+	    return payload
 
 """ 
     LISPAddressField, Dealing with addresses in LISP context, the packets often contain (afi, address) where the afi decides the length of the address (0, 32 or 128 bit). LISPAddressField will parse an IPField or an IP6Field depending on the value of the AFI field. 
