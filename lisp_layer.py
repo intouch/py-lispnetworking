@@ -92,7 +92,7 @@ class IPVersion(Packet):
 
 class LISP_AddressField(Field):
     def __init__(self, fld_name, ip_fld_name):
-        Field.__init__(self, ip_fld_name, None)
+        Field.__init__(self, ip_fld_name, '0')
         
         self.fld_name=fld_name
         self._ip_field=IPField(ip_fld_name, "192.168.1.1")
