@@ -11,7 +11,7 @@
     archive for more details.
 """
 
-import scapy,socket,struct,binascii
+import scapy,socket,struct,random,fcntl
 from scapy import *
 from scapy.all import *
 
@@ -42,6 +42,10 @@ _AFI = {
     "ipv6" : 2,
     "lcaf" : 16387 
 }
+
+""" nonce_max determines the maximum value of a nonce field. The default is set to 18446744073709551615, since this is the maximum possible value (>>> int('f'*16, 16)). TODO - see about the entropy for this source"""
+
+nonce_max = 16777215000
 
 """CLASS TO DETERMINE WHICH PACKET TYPE TO INTERPRET
 scapy is designed to read out bytes before it can call another class. we are using the ugly conditional construction you see below to circumvent this, since all classes must have the length of one or more bytes. improving and making this prettier is still on the TODO list """
@@ -86,17 +90,17 @@ class IPVersion(Packet):
 	        return payload
 
 """ 
-    LISPAddressField, Dealing with addresses in LISP context, the packets often contain (afi, address) where the afi decides the length of the address (0, 32 or 128 bit). LISPAddressField will parse an IPField or an IP6Field depending on the value of the AFI field. 
+LISPAddressField, Dealing with addresses in LISP context, the packets often contain (afi, address) where the afi decides the length of the address (0, 32 or 128 bit). LISPAddressField will parse an IPField or an IP6Field depending on the value of the AFI field. 
     
 """
 
 class LISP_AddressField(Field):
     def __init__(self, fld_name, ip_fld_name):
-        Field.__init__(self, ip_fld_name, '0')
-        
+        Field.__init__(self, ip_fld_name, '1')
+
         self.fld_name=fld_name
-        self._ip_field=IPField(ip_fld_name, "192.168.1.1")
-        self._ip6_field=IP6Field(ip_fld_name, "2001:db8::1")
+        self._ip_field=IPField(ip_fld_name, '127.0.0.1')
+        self._ip6_field=IP6Field(ip_fld_name, '::1')
 
     def getfield(self, pkt, s):
         if getattr(pkt, self.fld_name) == _AFI["ipv4"]:
@@ -109,7 +113,7 @@ class LISP_AddressField(Field):
             return self._ip_field.addfield(pkt, s, val)
         elif getattr(pkt, self.fld_name) == _AFI["ipv6"]: 
             return self._ip6_field.addfield(pkt, s, val)
-            
+
 """RECORD FIELDS, PART OF THE REPLY, REQUEST, NOTIFY OR REGISTER PACKET CLASSES"""
 
 """ LISP Address Field, used multiple times whenever an AFI determines the length of the IP field. for example, IPv4 requires 32 bits of storage while IPv6 needs 128 bits. This field can easily be extended once new LISP LCAF formats are needed, see the LISP_AddressField class for this. """
@@ -167,7 +171,7 @@ class LISP_MapRequestRecord(Packet):
     fields_desc = [
         ByteField("reserved", 0),
 	        # eid mask length
-        ByteField("eid_mask_len", 0),
+        ByteField("eid_mask_len", 24),
         	# eid prefix afi
         ShortField("request_afi", int(1)),
 	        # eid prefix information + afi
@@ -189,7 +193,7 @@ class LISP_MapRequest(Packet):
             # Right now we steal 3 extra bits from the reserved fields that are prior to the itr_rloc_records
         FieldLenField("itr_rloc_count", None, "itr_rloc_records", "B", count_of="itr_rloc_records", adjust=lambda pkt,x:x / 6 - 1),                          
         FieldLenField("request_count", None, "request_records", "B", count_of="request_records", adjust=lambda pkt,x:x / 8),  
-        XLongField("nonce", 0),
+        XLongField("nonce", random.randint(0, nonce_max)),
             # below, the source address of the request is listed, this occurs once per packet
         ShortField("request_afi", int(1)),
             # the LISP IP address field is conditional, because it is absent if the AFI is set to 0
@@ -207,7 +211,7 @@ class LISP_MapReply(Packet):
         BitField("p2", 0, 9),        
         BitField("reserved", 0, 8),
         FieldLenField("map_count", 0, "map_records", "B", count_of="map_records", adjust=lambda pkt,x:x/16 - 1),  
-        XLongField("nonce", 0),
+	XLongField("nonce", random.randint(0, nonce_max)),
         PacketListField("map_records", 0, LISP_MapRecord, count_from=lambda pkt:pkt.map_count + 1)
     ]
 
@@ -220,8 +224,8 @@ class LISP_MapRegister(Packet):
         BitField("p3", 0, 18), 
         FlagsField("register_flags", None, 1, ["want-map-notify"]),
         FieldLenField("register_count", None, "register_records", "B", count_of="register_records", adjust=lambda pkt,x:x / 16 - 1),
-        XLongField("nonce", 0),
-        ShortField("key_id", 0),
+        XLongField("nonce", random.randint(0, nonce_max)),
+	ShortField("key_id", 0),
         ShortField("authentication_length", 0),
             # authentication length expresses itself in bytes, so no modifications needed here
         StrLenField("authentication_data", None, length_from = lambda pkt: pkt.authentication_length),
@@ -236,13 +240,19 @@ class LISP_MapNotify(Packet):
         BitField("reserved", 0, 12),
         ByteField("reserved_fields", 0),
         FieldLenField("notify_count", None, "notify_records", "B", count_of="notify_records"),
-        XLongField("nonce", 0),
+	XLongField("nonce", random.randint(0, nonce_max)),
         ShortField("key_id", 0),
         ShortField("authentication_length", 0),
             # authentication length expresses itself in bytes, so no modifications needed here
         StrLenField("authentication_data", None, length_from = lambda pkt: pkt.authentication_length),
         PacketListField("notify_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.notify_count)
     ]
+
+class test(Packet):
+	fields_desc = [
+		SourceIPField("aaa",0)
+	]
+
 
 class LISP_Encapsulated_Control_Message(Packet):
     name = "LISP Encapsulated Control Message packet"
@@ -251,10 +261,6 @@ class LISP_Encapsulated_Control_Message(Packet):
     	FlagsField("ecm_flags", None, 1, ["security"]),
     	BitField("p8", 0, 27) 
     ]
-
-def sendLIGquery():
-    """ trying to spawn a map request that can be answered by a mapserver """ """ WIP """
-    return IP()/UDP(sport=4342,dport=4342)/LISP_Type()/LISP_MapRequest()
 
     """ Bind LISP into scapy stack
     
