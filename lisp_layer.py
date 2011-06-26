@@ -11,7 +11,7 @@
     archive for more details.
 """
 
-import scapy,socket,struct,random,fcntl
+import scapy,socket,struct,random,fcntl,netifaces,IPy
 from scapy import *
 from scapy.all import *
 
@@ -74,7 +74,7 @@ class LISP_Type(Packet):
     
 """ the class below reads the first byte of an unidentified IPv4 or IPv6 header. it then checks the first byte of the payload to see if its IPv4 or IPv6 header. the IPv4 header contains a byte to describe the IP version, which is always hex45. IPv6 has a 4 bit header, which is harder to read in scapy. maybe this can be done in a prettier way - TODO """
 
-class IPVersion(Packet):
+class LCAF_Type(Packet):
     def guess_payload_class(self, payload):
 	a = payload[:1]
         b = struct.unpack("B", a)
@@ -113,6 +113,7 @@ class LISP_AddressField(Field):
             return self._ip_field.addfield(pkt, s, val)
         elif getattr(pkt, self.fld_name) == _AFI["ipv6"]: 
             return self._ip6_field.addfield(pkt, s, val)
+
 
 """RECORD FIELDS, PART OF THE REPLY, REQUEST, NOTIFY OR REGISTER PACKET CLASSES"""
 
@@ -273,7 +274,7 @@ class LISP_Encapsulated_Control_Message(Packet):
     # tie LISP into the IP/UDP stack
 bind_layers( UDP, LISP_Type, dport=4342 )
 bind_layers( UDP, LISP_Type, sport=4342 )
-bind_layers( LISP_Encapsulated_Control_Message, IPVersion, )
+bind_layers( LISP_Encapsulated_Control_Message, LCAF_Type, )
 
 """ start scapy shell """
 if __name__ == "__main__":

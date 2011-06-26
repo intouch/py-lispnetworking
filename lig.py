@@ -11,15 +11,26 @@
     archive for more details.
 """
 from lisp_layer import *
-from scapy import *
-from scapy.all import *
-import sys, pprint, random, socket, struct
 
-def getIP()
+interface = 'eth0'
 
+def sendLIG(map_server, query):
+	""" an alternative approach to retrieve the hosts ip is by using socket.gethostbyname(socket.gethostname()), but this unfortunatly often returns only a loopback on LINUX systems. """
+	
+	source_ipv4 = netifaces.ifaddresses(interface)[socket.AF_INET][0]['addr']
+	source_ipv6 = netifaces.ifaddresses(interface)[socket.AF_INET6][0]['addr']
+	mapserver_afi=IP(map_server).version
+	source = int(0)
+	source_afi = int(0)
+	
+	if source_ipv6 and mapserver_afi == 2:
+		source_afi = 2
+		source = source_ipv6
+	elif source_ipv4 and mapserver_afi == 1:
+		source_afi = 1
+		source = source_ipv4
 
-def sendLIG(source, source_afi, map_server, query):
-	return IP(dst=map_server)/UDP(sport=random.randint(0, 10000),dport=4342)/LISP_MapRequest(request_afi=source_afi, address=source,type=1, itr_rloc_records=[LISP_AFI_Address(address=source,afi=source_afi)],request_records=[LISP_MapRequestRecord(request_address=query)])
+	return IP(dst=map_server)/UDP(sport=random.randint(5000, 10000), dport=4342)/LISP_MapRequest(request_afi=source_afi, address=source, type=1, itr_rloc_records=[LISP_AFI_Address(address=source,afi=source_afi)],request_records=[LISP_MapRequestRecord(request_address=query)])
 
 """ start shell """
 if __name__ == "__main__":
