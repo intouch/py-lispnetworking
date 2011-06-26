@@ -11,7 +11,7 @@
     archive for more details.
 """
 
-import scapy,socket,struct,random,fcntl,netifaces,IPy
+import scapy,socket,struct,random,fcntl,netifaces
 from scapy import *
 from scapy.all import *
 
@@ -192,7 +192,7 @@ class LISP_MapRequest(Packet):
         FlagsField("request_flags", None, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
         BitField("p1", 0, 6),
             # Right now we steal 3 extra bits from the reserved fields that are prior to the itr_rloc_records
-        FieldLenField("itr_rloc_count", None, "itr_rloc_records", "B", count_of="itr_rloc_records", adjust=lambda pkt,x:x / 6 - 1),                          
+        FieldLenField("itr_rloc_count", None, "itr_rloc_records", "B", count_of="itr_rloc_records"), adjust=lambda pkt,x:x / 6 - 1),                          
         FieldLenField("request_count", None, "request_records", "B", count_of="request_records", adjust=lambda pkt,x:x / 8),  
         XLongField("nonce", random.randint(0, nonce_max)),
             # below, the source address of the request is listed, this occurs once per packet
