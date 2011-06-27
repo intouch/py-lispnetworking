@@ -10,7 +10,7 @@
     Public License. See the file COPYING in the main directory of this
     archive for more details.
 """
-from lisp_layer import *
+from lib_pylispnetworking import *
 
 interface = 'eth0'
 

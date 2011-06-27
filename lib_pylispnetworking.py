@@ -96,7 +96,7 @@ LISPAddressField, Dealing with addresses in LISP context, the packets often cont
 
 class LISP_AddressField(Field):
     def __init__(self, fld_name, ip_fld_name):
-        Field.__init__(self, ip_fld_name, '1')
+        Field.__init__(self, ip_fld_name, '0')
 
         self.fld_name=fld_name
         self._ip_field=IPField(ip_fld_name, '127.0.0.1')
@@ -195,7 +195,7 @@ class LISP_MapRequest(Packet):
         FieldLenField("itr_rloc_count", None, "itr_rloc_records", "B", count_of="itr_rloc_records", adjust=lambda pkt,x:x / 6 - 1),                          
         FieldLenField("request_count", None, "request_records", "B", count_of="request_records", adjust=lambda pkt,x:x / 8),  
         XLongField("nonce", random.randint(0, nonce_max)),
-            # below, the source address of the request is listed, this occurs once per packet
+	    # below, the source address of the request is listed, this occurs once per packet
         ShortField("request_afi", int(1)),
             # the LISP IP address field is conditional, because it is absent if the AFI is set to 0
         ConditionalField(LISP_AddressField("request_afi", "address"), lambda pkt:pkt.request_afi != 0),
@@ -224,7 +224,7 @@ class LISP_MapRegister(Packet):
         FlagsField("register_flags", None, 1, ["proxy_map_reply"]),
         BitField("p3", 0, 18), 
         FlagsField("register_flags", None, 1, ["want-map-notify"]),
-        FieldLenField("register_count", None, "register_records", "B", count_of="register_records", adjust=lambda pkt,x:x / 16 - 1),
+        FieldLenField("register_count", None, "register_records", "B", count_of="register_records", adjust=lambda pkt,x:x/16 - 1),
         XLongField("nonce", random.randint(0, nonce_max)),
 	ShortField("key_id", 0),
         ShortField("authentication_length", 0),
@@ -248,12 +248,6 @@ class LISP_MapNotify(Packet):
         StrLenField("authentication_data", None, length_from = lambda pkt: pkt.authentication_length),
         PacketListField("notify_records", None, LISP_MapRecord, count_from=lambda pkt: pkt.notify_count)
     ]
-
-class test(Packet):
-	fields_desc = [
-		SourceIPField("aaa",0)
-	]
-
 
 class LISP_Encapsulated_Control_Message(Packet):
     name = "LISP Encapsulated Control Message packet"
