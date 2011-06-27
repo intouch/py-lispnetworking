@@ -91,7 +91,6 @@ class LCAF_Type(Packet):
 
 """ 
 LISPAddressField, Dealing with addresses in LISP context, the packets often contain (afi, address) where the afi decides the length of the address (0, 32 or 128 bit). LISPAddressField will parse an IPField or an IP6Field depending on the value of the AFI field. 
-    
 """
 
 class LISP_AddressField(Field):
@@ -188,12 +187,14 @@ class LISP_MapRequest(Packet):
     """ map request part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Request packet"
     fields_desc = [
-        BitField("type", 0, 4),
+        BitField("ptype", 0, 4),
         FlagsField("request_flags", None, 6, ["authoritative", "map_reply_included", "probe", "smr", "pitr", "smr_invoked"]),
         BitField("p1", 0, 6),
-            # Right now we steal 3 extra bits from the reserved fields that are prior to the itr_rloc_records
-        FieldLenField("itr_rloc_count", None, "itr_rloc_records", "B", count_of="itr_rloc_records", adjust=lambda pkt,x:x / 6 - 1),                          
-        FieldLenField("request_count", None, "request_records", "B", count_of="request_records", adjust=lambda pkt,x:x / 8),  
+            # right now we steal 3 extra bits from the reserved fields that are prior to the itr_rloc_records
+	    # the lambda you see below, checks for the length of the 'itr_rloc_records' by going from the largest possible IP + AFI record (IPv6 = 18 bytes) to the smallest one (IPv4 = 6 bytes). The entry in the middle (%12) takes care of dual IPv4 records. 
+	    # TODO - get the 2 record limitation worked out. 
+        FieldLenField("itr_rloc_count", None, "itr_rloc_records", "B", count_of="itr_rloc_records", adjust=lambda pkt,x:((not (x%18) and (x/18-1)) or ((not (x%12) and (x/12-1)) or ((not x%6) and (x/6-1))))),                
+	FieldLenField("request_count", None, "request_records", "B", count_of="request_records", adjust=lambda pkt,x:x / 8),  
         XLongField("nonce", random.randint(0, nonce_max)),
 	    # below, the source address of the request is listed, this occurs once per packet
         ShortField("request_afi", int(1)),
