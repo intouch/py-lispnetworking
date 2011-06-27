@@ -193,22 +193,22 @@ class LISP_MapRequest(Packet):
             # right now we steal 3 extra bits from the reserved fields that are prior to the itr_rloc_records
 	    # the lambda you see below, checks for the length of the 'itr_rloc_records' by going from the largest possible IP + AFI record (IPv6 = 18 bytes) to the smallest one (IPv4 = 6 bytes). The entry in the middle (%12) takes care of dual IPv4 records. 
 	    # TODO - get the 2 record limitation worked out. 
-        FieldLenField("itr_rloc_count", None, "itr_rloc_records", "B", count_of="itr_rloc_records", adjust=lambda pkt,x:((not (x%18) and (x/18-1)) or ((not (x%12) and (x/12-1)) or ((not x%6) and (x/6-1))))),                
-	FieldLenField("request_count", None, "request_records", "B", count_of="request_records", adjust=lambda pkt,x:x / 8),  
+        FieldLenField("itr_rloc_count", int(0), "itr_rloc_records", "B", count_of="itr_rloc_records", adjust=lambda pkt,x:((not (x%18) and (x/18-1)) or ((not (x%12) and (x/12-1)) or ((not x%6) and (x/6-1))))),                
+	FieldLenField("request_count", int(0), "request_records", "B", count_of="request_records", adjust=lambda pkt,x:x/8+1),  
         XLongField("nonce", random.randint(0, nonce_max)),
 	    # below, the source address of the request is listed, this occurs once per packet
         ShortField("request_afi", int(1)),
             # the LISP IP address field is conditional, because it is absent if the AFI is set to 0
         ConditionalField(LISP_AddressField("request_afi", "address"), lambda pkt:pkt.request_afi != 0),
         PacketListField("itr_rloc_records", None, LISP_AFI_Address, count_from=lambda pkt: pkt.itr_rloc_count + 1),
-        PacketListField("request_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.request_count) 
+        PacketListField("request_records", None, LISP_MapRequestRecord, count_from=lambda pkt: pkt.request_count + 1) 
     ]
 
 class LISP_MapReply(Packet):                                                    
     """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Reply packet"
     fields_desc = [
-        BitField("type", 0, 4),
+        BitField("ptype", 0, 4),
         FlagsField("reply_flags", None, 3, ["probe", "echo_nonce_alg", "security" ]),
         BitField("p2", 0, 9),        
         BitField("reserved", 0, 8),
@@ -221,7 +221,7 @@ class LISP_MapRegister(Packet):
     """ map reply part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Register packet"
     fields_desc = [ 
-        BitField("type", 0, 4),
+        BitField("ptype", 0, 4),
         FlagsField("register_flags", None, 1, ["proxy_map_reply"]),
         BitField("p3", 0, 18), 
         FlagsField("register_flags", None, 1, ["want-map-notify"]),
@@ -238,7 +238,7 @@ class LISP_MapNotify(Packet):
     """ map notify part used after the first 16 bits have been read by the LISP_Type class"""
     name = "LISP Map-Notify packet"
     fields_desc = [
-        BitField("type", 0, 4),
+        BitField("ptype", 0, 4),
         BitField("reserved", 0, 12),
         ByteField("reserved_fields", 0),
         FieldLenField("notify_count", None, "notify_records", "B", count_of="notify_records"),
@@ -253,7 +253,7 @@ class LISP_MapNotify(Packet):
 class LISP_Encapsulated_Control_Message(Packet):
     name = "LISP Encapsulated Control Message packet"
     fields_desc = [
-        BitField("type", 0, 4),	
+        BitField("ptype", 0, 4),	
     	FlagsField("ecm_flags", None, 1, ["security"]),
     	BitField("p8", 0, 27) 
     ]

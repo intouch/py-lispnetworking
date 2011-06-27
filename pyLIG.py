@@ -22,7 +22,6 @@ def sendLIG(map_server, query, eid_mask_len):
 	map_server_afi = '0'
 
 	c = map_server.count(':')
-	print c
 	if c == 0:
 		map_server_afi = 4
 	elif c > 0:
@@ -41,7 +40,7 @@ def sendLIG(map_server, query, eid_mask_len):
 		source = source_ipv4
 		packet = IP(dst=map_server)
 
-	packet /= UDP(sport=random.randint(5000, 10000), dport=4342)/LISP_MapRequest(request_afi=source_afi, address=source, type=1, itr_rloc_records=[LISP_AFI_Address(address=source,afi=source_afi)],request_records=[LISP_MapRequestRecord(request_address=query, eid_mask_len=eid_mask_len)])
+	packet /= UDP(sport=random.randint(10000, 20000),dport=4342)/LISP_MapRequest(request_afi=source_afi, address=source, ptype=1, itr_rloc_records=[LISP_AFI_Address(address=source,afi=source_afi)],request_records=[LISP_MapRequestRecord(request_address=query, eid_mask_len=eid_mask_len)])
 
 	return packet
 
