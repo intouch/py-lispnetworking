@@ -1,4 +1,6 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/env python
+# scapy.contrib.description = Locator ID Separation Protocol
+# scapy.contrib.status = loads
 """
     This file is part of a toolset to manipulate LISP control-plane
     packets "py-lispnetworking".
@@ -14,6 +16,9 @@
 import scapy,socket,struct,random,fcntl,netifaces
 from scapy import *
 from scapy.all import *
+from scapy.packet import *
+from scapy.fields import *
+from scapy.layers.inet import UDP
 
 """  GENERAL DECLARATIONS """
 
@@ -50,7 +55,9 @@ nonce_max = 16777215000
 """CLASS TO DETERMINE WHICH PACKET TYPE TO INTERPRET
 scapy is designed to read out bytes before it can call another class. we are using the ugly conditional construction you see below to circumvent this, since all classes must have the length of one or more bytes. improving and making this prettier is still on the TODO list """
 
-class LISP_Type(Packet):
+class LISP(Packet):
+    name = "LISP"
+
     def guess_payload_class(self, payload):
        	# read the payload (non interpreted part of the packet string) into a variable
     	a = payload[:1]
@@ -267,8 +274,8 @@ class LISP_Encapsulated_Control_Message(Packet):
     lisp-control    4342/udp   LISP Data-Triggered Control """
 
     # tie LISP into the IP/UDP stack
-bind_layers( UDP, LISP_Type, dport=4342 )
-bind_layers( UDP, LISP_Type, sport=4342 )
+bind_layers( UDP, LISP, dport=4342 )
+bind_layers( UDP, LISP, sport=4342 )
 bind_layers( LISP_Encapsulated_Control_Message, LCAF_Type, )
 
 """ start scapy shell """
