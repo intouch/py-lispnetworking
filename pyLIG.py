@@ -10,9 +10,15 @@
     Public License. See the file COPYING in the main directory of this
     archive for more details.
 """
+# query a mapserver for the RLOC of the given EID space
+# note that this does _not_ work over NAT
+# you also need root for the sockets, might fix this in the future
+
 from lib_pylispnetworking import *
 
+# define the timeout here, just in case no reply is received
 timeout = 3
+# define the interface to send out on, FIXME
 interface = 'eth0'
 
 def sendLIG(map_server, query, eid_mask_len):
@@ -60,13 +66,14 @@ def sendLIG(map_server, query, eid_mask_len):
 	# build the packet with the information gathered
 	packet /= UDP(sport=sport,dport=4342)/LISP_MapRequest(request_flags='probe', request_afi=source_afi, address=source, ptype=1, itr_rloc_records=[LISP_AFI_Address(address=source,afi=source_afi)],request_records=[LISP_MapRequestRecord(request_address=query, request_afi=query_afi, eid_mask_len=eid_mask_len)])
 
-	# return packet
+	# send packet over layer 3
 	send(packet)
 
 	# start capturing on the source port
-	capture = sniff(filter="udp and port 4342", timeout=timeout, opened_socket=server_socket)
+	capture = sniff(filter='udp and port 4342', timeout=timeout, opened_socket=server_socket)
         for i in range(len(capture)):
 		capture[i].show2()
+		server_socket.close()
 		break
 
 """ start shell """
