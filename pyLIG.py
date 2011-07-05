@@ -53,24 +53,26 @@ def sendLIG(map_server, query, eid_mask_len):
 		source_afi = 2
 		source = source_ipv6
 		packet = IPv6(dst=map_server)
+		socket_afi = socket.AF_INET6
 	elif source_ipv4 and map_server_afi == 4:
 		source_afi = 1
 		source = source_ipv4
 		packet = IP(dst=map_server)
+		socket_afi = socket.AF_INET
 
 	# open the socket already, so that its ready once the packet is sent
-        server_socket = socket.socket(source_afi, socket.SOCK_DGRAM)
-	# bind it to the correct IP AFI and the port generated earlier
-        server_socket.bind('sport')
+	server_socket = socket.socket(socket_afi, socket.SOCK_DGRAM)
+        server_socket.bind((source, sport))
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 0)
 
-	# build the packet with the information gathered
-	packet /= UDP(sport=sport,dport=4342)/LISP_MapRequest(request_flags='probe', request_afi=source_afi, address=source, ptype=1, itr_rloc_records=[LISP_AFI_Address(address=source,afi=source_afi)],request_records=[LISP_MapRequestRecord(request_address=query, request_afi=query_afi, eid_mask_len=eid_mask_len)])
+	# build the packet with the information gathered. flags are set to smr + probe (equals 12)
+	packet /= UDP(sport=sport,dport=4342)/LISP_MapRequest(request_flags=12, request_afi=source_afi, address=source, ptype=1, itr_rloc_records=[LISP_AFI_Address(address=source,afi=source_afi)],request_records=[LISP_MapRequestRecord(request_address=query, request_afi=query_afi, eid_mask_len=eid_mask_len)])
 
 	# send packet over layer 3
 	send(packet)
 
 	# start capturing on the source port
-	capture = sniff(filter='udp and port 4342', timeout=timeout, opened_socket=server_socket)
+	capture = sniff(filter='udp and port 4342', timeout=timeout) #,opened_socket=server_socket)
         for i in range(len(capture)):
 		capture[i].show2()
 		server_socket.close()
