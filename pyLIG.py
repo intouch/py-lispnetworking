@@ -31,6 +31,7 @@ def sendLIG(map_server, query, eid_mask_len):
     query_afi = int(0)
     source_afi = int(0)
     source = int(0)
+    server_socket = L2ListenSocket()
     
 	# check if the map server specified is IPv4 or IPv6, this is important for python field lengths
 	# could implement it in a method, but we use it just once anyway
@@ -59,24 +60,30 @@ def sendLIG(map_server, query, eid_mask_len):
 		packet = IP(dst=map_server)
 		socket_afi = socket.AF_INET
 
-	# open the socket already, so that its ready once the packet is sent
-    server_socket = socket.socket(socket_afi, socket.SOCK_RAW, socket.IPPROTO_RAW)
-    server_socket.bind((source, sport))
-    server_socket.setsockopt(socket.SOL_IP, socket.SO_RCVBUF, 0)
-	
-    # build the packet with the information gathered. flags are set to smr + probe (equals 12)
+    	# build the packet with the information gathered. flags are set to smr + probe (equals 12)
     packet /= UDP(sport=sport,dport=4342)/LISP_MapRequest(request_flags=12, request_afi=source_afi, address=source, ptype=1, itr_rloc_records=[LISP_AFI_Address(address=source,afi=source_afi)],request_records=[LISP_MapRequestRecord(request_address=query, request_afi=query_afi, eid_mask_len=eid_mask_len)])
 
-    # send packet over layer 3
+	# send packet over layer 3
     send(packet)
 
-# start capturing on the source port
-    capture = sniff(filter='udp and port 4342', timeout=timeout) #,opened_socket=server_socket)
+	# start capturing on the source port
+    capture = sniff(filter='udp and port 4342', timeout=timeout, opened_socket=server_socket)
+    found = 0
     for i in range(len(capture)):
-		capture[i].show2()
-		server_socket.close()
-		break
+	try:	
+		if capture[i].nonce == packet.nonce and capture[i].ptype == 2:
+			capture[i].show2()
+			server_socket.close()
+			found = 1
+			break
 
-""" start shell """
+	except AttributeError:
+		pass
+
+    if found != 1:
+	print 'no replies received, are you sure you\'re not behind NAT?'
+	server_socket.close()
+
+# start pyLIG shell
 if __name__ == "__main__":
         interact(mydict=globals())
