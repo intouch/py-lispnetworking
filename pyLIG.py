@@ -16,17 +16,19 @@
 
 from lib_pylispnetworking import *
 
-# define the timeout here, just in case no reply is received
+	# define the timeout here, just in case no reply is received
 timeout = 1
-# define the interface to send out on, FIXME
+	# define the interface to send out on, FIXME
 interface = 'eth0'
-# define the mask length to query for, removed it from variables since 32 appears to work fine
-eid_mask_len = 32
 
 def sendLIG(map_server, query):
-    # an alternative approach to retrieve the hosts ip is by using socket.gethostbyname(socket.gethostname()), but this unfortunatly often returns only a loopback on LINUX systems. the method below appears to work
+	# an alternative approach to retrieve the hosts ip is by using socket.gethostbyname(socket.gethostname()), but this unfortunatly often returns only a loopback on LINUX systems. the method below appears to work
     source_ipv4 = netifaces.ifaddresses(interface)[socket.AF_INET][0]['addr']
     source_ipv6 = netifaces.ifaddresses(interface)[socket.AF_INET6][0]['addr']
+	# warn the user there is no IPv6 connectivity
+    if not source_ipv6:
+	print 'NOTIFY: you have no IPv6 connectivity'
+
 	# generate a random source port, this seems to be an OK range
     sport1 = random.randint(60000, 65000)
     sport2 = random.randint(60000, 65000)
@@ -49,10 +51,12 @@ def sendLIG(map_server, query):
     d = query.count(':')
     if d == 0:
 		query_afi = 1
+		eid_mask_len = 32
     elif d > 0:
 		query_afi = 2
+		eid_mask_len = 128
 
-	# determine whether to use an IPv4 or IPv6 header and set some values
+	# determine whether to use an IPv4 or IPv6 header and set some values. initiate the 'packet' too here.
     if source_ipv6 and map_server_afi == 6:
 		source_afi = 2
 		source = source_ipv6
@@ -63,22 +67,44 @@ def sendLIG(map_server, query):
 		source = source_ipv4
 		packet = IP(dst=map_server)
 		socket_afi = socket.AF_INET
+    else:
+		print 'ERROR: the AFI (IPv4 / IPv6) you\'re trying to use is not available. check ifconfig'
 
     	# build the packet with the information gathered. flags are set to smr + probe (equals 12)
-    packet /= UDP(sport=sport1,dport=4342)/LISP_Encapsulated_Control_Message(ptype=8)/IP(src=source, dst=query, ttl=255)/UDP(sport=sport2,dport=4342)/LISP_MapRequest(request_afi=0, address=source, ptype=1, itr_rloc_records=[LISP_AFI_Address(address=source,afi=source_afi)],request_records=[LISP_MapRequestRecord(request_address=query, request_afi=query_afi, eid_mask_len=eid_mask_len)])
+    packet /= UDP(sport=sport1,dport=4342)/LISP_Encapsulated_Control_Message(ptype=8)
+
+	# check whether to use IPv4 or IPv6 for the second IP header
+    if query_afi == 1 and source_ipv4:
+	packet /= IP(src=source_ipv4, dst=query, ttl=255)
+    elif query_afi == 2 and source_ipv6:
+	packet /= IPv6(src=source_ipv6, dst=query)
+
+	# build the packet, uncomment the debig command below to see its structure
+    packet /= UDP(sport=sport2,dport=4342)/LISP_MapRequest(request_afi=0, address=source, ptype=1, itr_rloc_records=[LISP_AFI_Address(address=source,afi=source_afi)],request_records=[LISP_MapRequestRecord(request_address=query, request_afi=query_afi, eid_mask_len=eid_mask_len)])
+
+	# debug
+    # packet.show2()
 
 	# send packet over layer 3
     send(packet)
 
-	# start capturing on the source port
-    capture = sniff(filter='port 4342', timeout=timeout, opened_socket=server_socket)
+	# start capturing on the source port. initiate count value f
+    f = 0
+	# use the earlier opened socket to capture traffic on UDP port 4342
+    capture = sniff(filter='udp and port 4342', timeout=timeout, opened_socket=server_socket)
     for i in range(len(capture)):
 	try:	
 		if capture[i].nonce == packet.nonce and capture[i].ptype == 2:
 			capture[i].show2()
+			f = 1
 			break
 	except AttributeError:
 		pass
+
+	# print message if no reply received
+    if f == 0:
+	print 'ERROR: no reply received, are you sure you\'re not behind NAT and that you\'re connectivity is OK?'
+
 
     server_socket.close()
 
