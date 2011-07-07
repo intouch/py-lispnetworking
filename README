@@ -29,8 +29,14 @@ For more information about LISP please visit the following websites:
 
 This software is based on scapy.
 
+INSTALL
+
 See the INSTALL file for information how to setup a virtualenv and play with the
 various things that py-lispnetworking can do for you.
+
+pyLIG USAGE
+
+    ./pyLIG.py <mapserver> <eid-query>
 
 Copyright (C) 2011 Marek Kuczynski <marek@intouch.eu>
 Copyright (C) 2011 Job Snijders <job@intouch.eu>

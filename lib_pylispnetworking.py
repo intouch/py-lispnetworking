@@ -13,7 +13,7 @@
     archive for more details.
 """
 
-import scapy,socket,struct,random,fcntl,netifaces
+import scapy,socket,struct,random,fcntl,netifaces,sys
 from scapy import *
 from scapy.all import *
 from scapy.packet import *

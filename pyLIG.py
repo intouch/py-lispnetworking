@@ -108,6 +108,14 @@ def sendLIG(map_server, query):
 
     server_socket.close()
 
-# start pyLIG shell
-if __name__ == "__main__":
-        interact(mydict=globals())
+if len(sys.argv) == 3:
+	map_server = sys.argv[1]
+	query = sys.argv[2]
+	sendLIG(map_server, query)
+elif len(sys.argv) == 1:
+	print 'USAGE: ./pyLIG.py <mapserver> <eid-query>'	
+	if __name__ == "__main__":
+        	interact(mydict=globals())
+else:
+	print 'USAGE: ./pyLIG.py <mapserver> <eid-query>'
+

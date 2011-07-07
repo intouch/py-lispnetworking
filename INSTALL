@@ -35,7 +35,7 @@ UBUNTU GUIDE:
 
     Setup virtualenv and python
 
-        $ sudo apt-get install libxslt1-dev libxml2-dev python-virtualenv python-pip python-dev python2.6
+        $ sudo apt-get install libxslt1-dev libxml2-dev python-virtualenv python-pip python-dev python2.6 python-netifaces
 
     Install git-core mercurial, libpcap0.8, libpcap0.8-dev
 
@@ -59,7 +59,8 @@ Step 1: STARTING THE SCAPY SHELL WITH LISP GOODNESS
 
     Start the lisp_layer program
         
-        $ ./lisp_layer.py
+        $ ./lib_pylispnetworking.py
+	$ ./pyLIG.py
 
 Step 2: EXIT THE ENVIROMENT
 
