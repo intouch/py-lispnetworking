@@ -53,30 +53,37 @@ def sendLIG(map_server, query, eid_mask_len):
 		source_afi = 2
 		source = source_ipv6
 		packet = IPv6(dst=map_server)
+		packet_encap = IPv6(dst=map_server)
 		socket_afi = socket.AF_INET6
     elif source_ipv4 and map_server_afi == 4:
 		source_afi = 1
 		source = source_ipv4
 		packet = IP(dst=map_server)
+		packet_encap = IP(dst=map_server)
 		socket_afi = socket.AF_INET
 
     	# build the packet with the information gathered. flags are set to smr + probe (equals 12)
-    packet /= UDP(sport=sport,dport=4342)/LISP_MapRequest(request_flags=12, request_afi=source_afi, address=source, ptype=1, itr_rloc_records=[LISP_AFI_Address(address=source,afi=source_afi)],request_records=[LISP_MapRequestRecord(request_address=query, request_afi=query_afi, eid_mask_len=eid_mask_len)])
+    packet_encap /= UDP(sport=46380,dport=4342)/LISP_Encapsulated_Control_Message(ptype=8)/IP(src=source, dst=source, ttl=255)/UDP(sport=sport,dport=4342)/LISP_MapRequest(request_afi=0, address=source, ptype=1, itr_rloc_records=[LISP_AFI_Address(address=source,afi=source_afi)],request_records=[LISP_MapRequestRecord(request_address=query, request_afi=query_afi, eid_mask_len=eid_mask_len)])
+    packet /= UDP(sport=46380,dport=4342)/UDP(sport=sport,dport=4342)/LISP_MapRequest(request_afi=0, address=source, ptype=1, itr_rloc_records=[LISP_AFI_Address(address=source,afi=source_afi)],request_records=[LISP_MapRequestRecord(request_address=query, request_afi=query_afi, eid_mask_len=eid_mask_len)])
 
+	# print 'sending the following...'
+	# packet.show2()
+	# print '...'
+	
 	# send packet over layer 3
     send(packet)
 
 	# start capturing on the source port
-    capture = sniff(filter='udp and port 4342', timeout=timeout, opened_socket=server_socket)
+    capture = sniff(filter='port 4342', timeout=timeout, opened_socket=server_socket)
     found = 0
     for i in range(len(capture)):
 	try:	
-		if capture[i].nonce == packet.nonce and capture[i].ptype == 2:
+		#if capture[i].nonce == packet.nonce and capture[i].ptype == 2:
+		if capture[i].ptype == 2:
 			capture[i].show2()
 			server_socket.close()
 			found = 1
-			break
-
+			#break
 	except AttributeError:
 		pass
 

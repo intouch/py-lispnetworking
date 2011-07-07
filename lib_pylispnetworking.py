@@ -49,8 +49,8 @@ _AFI = {
 }
 
 """ nonce_max determines the maximum value of a nonce field. The default is set to 18446744073709551615, since this is the maximum possible value (>>> int('f'*16, 16)). TODO - see about the entropy for this source"""
-
 nonce_max = 16777215000
+nonce_min = 15000000000
 
 """CLASS TO DETERMINE WHICH PACKET TYPE TO INTERPRET
 scapy is designed to read out bytes before it can call another class. we are using the ugly conditional construction you see below to circumvent this, since all classes must have the length of one or more bytes. improving and making this prettier is still on the TODO list """
@@ -202,7 +202,7 @@ class LISP_MapRequest(Packet):
 	    # TODO - get the 2 record limitation worked out. 
         FieldLenField("itr_rloc_count", None, "itr_rloc_records", "B", count_of="itr_rloc_records", adjust=lambda pkt,x:((not (x%18) and (x/18-1)) or ((not (x%12) and (x/12-1)) or ((not x%6) and (x/6-1))))),                
 	FieldLenField("request_count", None, "request_records", "B", count_of="request_records", adjust=lambda pkt,x: (x / 8)),  
-        XLongField("nonce", random.randint(0, nonce_max)),
+        XLongField("nonce", random.randint(nonce_min, nonce_max)),
 	    # below, the source address of the request is listed, this occurs once per packet
         ShortField("request_afi", int(1)),
             # the LISP IP address field is conditional, because it is absent if the AFI is set to 0
@@ -220,7 +220,7 @@ class LISP_MapReply(Packet):
         BitField("p2", 0, 9),        
         BitField("reserved", 0, 8),
         FieldLenField("map_count", 0, "map_records", "B", count_of="map_records", adjust=lambda pkt,x:x/16 - 1),  
-	XLongField("nonce", random.randint(0, nonce_max)),
+	XLongField("nonce", random.randint(nonce_min, nonce_max)),
         PacketListField("map_records", 0, LISP_MapRecord, count_from=lambda pkt:pkt.map_count + 1)
     ]
 
@@ -233,7 +233,7 @@ class LISP_MapRegister(Packet):
         BitField("p3", 0, 18), 
         FlagsField("register_flags", None, 1, ["want-map-notify"]),
         FieldLenField("register_count", None, "register_records", "B", count_of="register_records", adjust=lambda pkt,x:x/16 - 1),
-        XLongField("nonce", random.randint(0, nonce_max)),
+        XLongField("nonce", random.randint(nonce_min, nonce_max)),
 	ShortField("key_id", 0),
         ShortField("authentication_length", 0),
             # authentication length expresses itself in bytes, so no modifications needed here
@@ -249,7 +249,7 @@ class LISP_MapNotify(Packet):
         BitField("reserved", 0, 12),
         ByteField("reserved_fields", 0),
         FieldLenField("notify_count", None, "notify_records", "B", count_of="notify_records"),
-	XLongField("nonce", random.randint(0, nonce_max)),
+	XLongField("nonce", random.randint(nonce_min, nonce_max)),
         ShortField("key_id", 0),
         ShortField("authentication_length", 0),
             # authentication length expresses itself in bytes, so no modifications needed here
