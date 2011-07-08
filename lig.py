@@ -24,9 +24,9 @@ interface = 'eth0'
 use = "USAGE: ./pyLIG.py <mapserver> <eid-query>"
 afi_error = "ERROR: the AFI (IPv4 / IPv6) you're trying to use is not available. check ifconfig"
 
-	# class to resolve FQDN addresses using Google DNS. it sends out a DNS packet and returns the reply IP
+	# class to resolve FQDN addresses using Google DNS. it sends out a DNS packet and returns the reply IP. right now, qtype is set to A (= IPv4), gonna fix this for AAAA (= IPv6) soon. 
 def resolveFQDN(host):
-    dns=DNS(rd=1,qd=DNSQR(qname=host))
+    dns=DNS(rd=1,qd=DNSQR(qname=host),qtype=A)
     response=sr1(IP(dst='8.8.8.8')/UDP()/dns)
     if response.haslayer(DNS):
         ans = response.getlayer(DNS).an
