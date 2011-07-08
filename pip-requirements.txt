@@ -2,3 +2,4 @@ PyX
 pcapy
 -e hg+http://hg.secdev.org/scapy#egg=scapy
 yolk
+netifaces
