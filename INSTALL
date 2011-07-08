@@ -35,7 +35,7 @@ UBUNTU GUIDE:
 
     Setup virtualenv and python
 
-        $ sudo apt-get install libxslt1-dev libxml2-dev python-virtualenv python-pip python-dev python2.6 python-netifaces
+        $ sudo apt-get install libxslt1-dev libxml2-dev python-virtualenv python-pip python-dev python2.6 
 
     Install git-core mercurial, libpcap0.8, libpcap0.8-dev
 
