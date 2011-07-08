@@ -13,12 +13,10 @@
     archive for more details.
 """
 
-import scapy,socket,struct,random,fcntl,netifaces,sys
+import socket,struct,random,netifaces,sys
+from string import ascii_letters
 from scapy import *
 from scapy.all import *
-from scapy.packet import *
-from scapy.fields import *
-from scapy.layers.inet import UDP
 
 """  GENERAL DECLARATIONS """
 
@@ -201,7 +199,7 @@ class LISP_MapRequest(Packet):
 	    # the lambda you see below, checks for the length of the 'itr_rloc_records' by going from the largest possible IP + AFI record (IPv6 = 18 bytes) to the smallest one (IPv4 = 6 bytes). The entry in the middle (%12) takes care of dual IPv4 records. 
 	    # TODO - get the 2 record limitation worked out. 
         FieldLenField("itr_rloc_count", None, "itr_rloc_records", "B", count_of="itr_rloc_records", adjust=lambda pkt,x:((not (x%18) and (x/18-1)) or ((not (x%12) and (x/12-1)) or ((not x%6) and (x/6-1))))),                
-	FieldLenField("request_count", None, "request_records", "B", count_of="request_records", adjust=lambda pkt,x: (x / 8)),  
+	FieldLenField("request_count", None, "request_records", "B", count_of="request_records", adjust=lambda pkt,x:x/8),  
         XLongField("nonce", random.randint(nonce_min, nonce_max)),
 	    # below, the source address of the request is listed, this occurs once per packet
         ShortField("request_afi", int(1)),

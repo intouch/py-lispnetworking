@@ -14,12 +14,30 @@
 # note that this does _not_ work over NAT
 # you also need root for the sockets, might fix this in the future
 
-from lib_pylispnetworking import *
+from lisp import *
 
 	# define the timeout here, just in case no reply is received
 timeout = 1
 	# define the interface to send out on, FIXME
 interface = 'eth0'
+	# define the use message
+use = "USAGE: ./pyLIG.py <mapserver> <eid-query>"
+afi_error = "ERROR: the AFI (IPv4 / IPv6) you're trying to use is not available. check ifconfig"
+
+	# class to resolve FQDN addresses using Google DNS. it sends out a DNS packet and returns the reply IP
+def resolveFQDN(host):
+    dns=DNS(rd=1,qd=DNSQR(qname=host))
+    response=sr1(IP(dst='8.8.8.8')/UDP()/dns)
+    if response.haslayer(DNS):
+        ans = response.getlayer(DNS).an
+        return ans.rdata
+
+	# check if an input is a FQDN or IP record, since they both appear as strings 
+def checkFQDN(string):
+    if re.match("[A-Za-z]", string):
+        return resolveFQDN(string)
+    else:
+	return string
 
 def sendLIG(map_server, query):
 	# an alternative approach to retrieve the hosts ip is by using socket.gethostbyname(socket.gethostname()), but this unfortunatly often returns only a loopback on LINUX systems. the method below appears to work
@@ -27,7 +45,7 @@ def sendLIG(map_server, query):
     source_ipv6 = netifaces.ifaddresses(interface)[socket.AF_INET6][0]['addr']
 	# warn the user there is no IPv6 connectivity
     if not source_ipv6:
-	print 'NOTIFY: you have no IPv6 connectivity'
+	print "NOTIFY: you have no IPv6 connectivity"
 
 	# generate a random source port, this seems to be an OK range
     sport1 = random.randint(60000, 65000)
@@ -68,7 +86,7 @@ def sendLIG(map_server, query):
 		packet = IP(dst=map_server)
 		socket_afi = socket.AF_INET
     else:
-		print 'ERROR: the AFI (IPv4 / IPv6) you\'re trying to use is not available. check ifconfig'
+		print afi_error
 
     	# build the packet with the information gathered. flags are set to smr + probe (equals 12)
     packet /= UDP(sport=sport1,dport=4342)/LISP_Encapsulated_Control_Message(ptype=8)
@@ -103,19 +121,24 @@ def sendLIG(map_server, query):
 
 	# print message if no reply received
     if f == 0:
-	print 'ERROR: no reply received, are you sure you\'re not behind NAT and that you\'re connectivity is OK?'
+	print "ERROR: no reply received, are you sure you're not behind NAT and that your connectivity is OK?"
 
-
+	# close the socket, else it'll stay alive for a while
     server_socket.close()
 
+	# check command line arguments
 if len(sys.argv) == 3:
 	map_server = sys.argv[1]
 	query = sys.argv[2]
+	map_server = checkFQDN(map_server)
+	query = checkFQDN(query)
 	sendLIG(map_server, query)
+		# if no arguments specified, drop to CLI
 elif len(sys.argv) == 1:
-	print 'USAGE: ./pyLIG.py <mapserver> <eid-query>'	
+	print use	
 	if __name__ == "__main__":
         	interact(mydict=globals())
 else:
-	print 'USAGE: ./pyLIG.py <mapserver> <eid-query>'
+		# if a weird amount of arguments is given, display usage information
+	print use
 
