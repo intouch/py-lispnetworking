@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/env python
 """
     This file is part of a toolset to manipulate LISP control-plane
     packets "py-lispnetworking".
